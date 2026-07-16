@@ -9,3 +9,4 @@ test-results/
 .DS_Store
 *.tsbuildinfo
 supabase/.temp/
+next-env.d.ts
