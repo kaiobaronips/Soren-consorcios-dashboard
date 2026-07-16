@@ -122,17 +122,18 @@ Exemplo de dado adicional de apoio, extraído da aba Dashboard para JANDIRINHA (
 
 | Coluna da planilha (aba Consórcios) | Campo em `consortium_products` | Observação |
 |---|---|---|
-| Produto (`A`) | `name` | Ex.: `Imóvel IE600 – 240m` |
-| Código (`B`) | `code` | Ex.: `IE600` — repetido 3× (um por prazo); chave de dedup do importador é `code + category + term_months + credit_amount` |
+| Produto (`A`) | `product_name` | Ex.: `Imóvel IE600 – 240m` |
+| Código (`B`) | `product_code` | Ex.: `IE600` — repetido 3× (um por prazo); chave de dedup do importador é `product_code + category + term_months + credit_amount` |
 | Valor da Carta (`C`) | `credit_amount` | `NUMERIC(14,2)`; 21 valores distintos, 120.000–600.000 |
 | Prazo em meses (`D`) | `term_months` | 200 / 220 / 240 |
-| Taxa Adm Total (`E`) | `admin_fee_percent` | Armazenado como percentual (24,8/25,8/26,8), não fração |
-| Parcela 1ª a 12ª (`F`) | `initial_installment_amount` | Recalculável, mas importado como veio da planilha (auditoria) |
+| Taxa Adm Total (`E`) | `total_administration_fee_percent` | `NUMERIC(6,3)`, armazenado em pontos percentuais (ex.: `26.800` para 26,8%), não fração |
+| Parcela 1ª a 12ª (`F`) | `first_12_installment_amount` | Recalculável, mas importado como veio da planilha (auditoria). A planilha só fornece a faixa agregada 1ª–12ª, não a 1ª parcela isolada |
 | Parcela Mensal (`G`) | `regular_installment_amount` | Recalculável, mas importado como veio da planilha (auditoria) |
+| *(não existe na planilha)* | `first_installment_amount` | Campo separado do schema para a 1ª parcela isolada — a planilha não distingue a 1ª parcela da faixa 1ª–12ª, então este campo fica `NULL` na importação (nenhum dado de origem para preenchê-lo) |
 | *(implícito, não é coluna)* | `reserve_fund_percent` | Preenchido com `2.000` (2%) — o fundo de reserva descoberto por engenharia reversa, não uma coluna original |
 | *(não existe na planilha — todos os produtos são imóvel)* | `category` | Preenchido como `'property'` para os 63 produtos importados; produtos de veículo do seed usam `'vehicle'` e `is_demo = true` |
 | *(não existe na planilha)* | `is_demo` | `false` para os 63 produtos reais importados; `true` para os produtos demonstrativos de veículo |
 | *(não existe na planilha)* | `organization_id` | Atribuído no momento da importação à organização demo "Soren Consórcios" |
-| *(não existe na planilha)* | `is_active` | Todos os produtos importados nascem ativos (`true`) |
+| *(não existe na planilha)* | `status` | Enum `product_status` (`draft`/`active`/`inactive`/`archived`); todos os produtos importados nascem `'active'` |
 
-O importador (`pnpm import:xlsx references/consorcio.xlsx`, Fase 2) deve ser **idempotente**: reexecuções não duplicam produtos (dedup pela chave composta acima) e produzem um relatório de inseridos/atualizados/ignorados/inválidos/erros.
+O importador (`pnpm import:xlsx references/consorcio.xlsx`, Fase 2) deve ser **idempotente**: reexecuções não duplicam produtos (dedup pela chave composta `product_code + category + term_months + credit_amount`) e produzem um relatório de inseridos/atualizados/ignorados/inválidos/erros.
