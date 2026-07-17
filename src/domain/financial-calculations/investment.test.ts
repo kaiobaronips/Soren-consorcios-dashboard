@@ -4,6 +4,15 @@ import {
   cdiEffectiveAnnualRate, monthlyEquivalentRate,
 } from "./investment";
 
+describe("monthlyEquivalentRate", () => {
+  it("10,5% a.a. → taxa mensal equivalente (8 casas)", () => {
+    expect(monthlyEquivalentRate("10.5")).toBe("0.00835516");
+  });
+  it("taxa zero → 0", () => {
+    expect(monthlyEquivalentRate("0")).toBe("0.00000000");
+  });
+});
+
 describe("calculateMonthlyContributionFutureValue (caso 12: taxa zero)", () => {
   it("taxa zero → aporte × meses", () => {
     expect(calculateMonthlyContributionFutureValue("1000.00", "0", 24)).toBe("24000.00");
