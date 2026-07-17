@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
+import Decimal from "decimal.js";
 
 config({ path: ".env.local" });
 
@@ -43,16 +44,18 @@ async function main() {
       userId = list.users.find((x) => x.email === u.email)?.id;
       if (!userId) throw error;
     }
-    await admin.from("profiles").upsert({
+    const { error: profErr } = await admin.from("profiles").upsert({
       id: userId, organization_id: orgId, name: u.name, email: u.email, role: u.role, active: true,
     });
+    if (profErr) throw profErr;
   }
 
   for (const [key, value] of Object.entries(SETTINGS)) {
-    await admin.from("system_settings").upsert(
+    const { error: setErr } = await admin.from("system_settings").upsert(
       { organization_id: orgId, key, value },
       { onConflict: "organization_id,key" },
     );
+    if (setErr) throw setErr;
   }
 
   const period = "2026-07-01";
@@ -75,6 +78,45 @@ async function main() {
     // idempotência: unique index (index_code, reference_period, organization_id) rejeita
     // reinserções com "duplicate key" — aceitável em re-run, propaga qualquer outro erro.
     if (error && !error.message.includes("duplicate")) throw error;
+  }
+
+  const VEHICLE_DEMOS = [
+    { code: "VD040", credit: "40000.00", term: 48, fee: "14.000" },
+    { code: "VD050", credit: "50000.00", term: 48, fee: "14.000" },
+    { code: "VD060", credit: "60000.00", term: 60, fee: "15.000" },
+    { code: "VD080", credit: "80000.00", term: 60, fee: "15.000" },
+    { code: "VD100", credit: "100000.00", term: 60, fee: "15.000" },
+    { code: "VD120", credit: "120000.00", term: 60, fee: "16.000" },
+    { code: "VD150", credit: "150000.00", term: 60, fee: "16.000" },
+    { code: "VD180", credit: "180000.00", term: 60, fee: "16.000" },
+  ];
+  // parcela regular demo = credit × (1 + fee% + 2%) ÷ term, mesma regra da planilha,
+  // calculada com decimal.js; first_12 = regular + 0.1% × credit (regra da planilha)
+  for (const v of VEHICLE_DEMOS) {
+    const { data: exists } = await admin.from("consortium_products").select("id")
+      .eq("organization_id", orgId).eq("product_code", v.code).eq("is_demo", true).maybeSingle();
+    if (exists) continue;
+    const credit = new Decimal(v.credit);
+    const regular = credit.times(new Decimal(1).plus(new Decimal(v.fee).div(100)).plus("0.02")).div(v.term);
+    const first12 = regular.plus(credit.times("0.001"));
+    const { error } = await admin.from("consortium_products").insert({
+      organization_id: orgId,
+      product_name: `Veículo ${v.code} – ${v.term}m (demo)`,
+      product_code: v.code,
+      category: "vehicle",
+      administrator_name: "Demo",
+      credit_amount: v.credit,
+      term_months: v.term,
+      total_administration_fee_percent: v.fee,
+      reserve_fund_percent: "2.000",
+      first_12_installment_amount: first12.toFixed(2),
+      regular_installment_amount: regular.toFixed(2),
+      correction_index: "IPCA",
+      correction_frequency_months: 12,
+      status: "active",
+      is_demo: true,
+    });
+    if (error) throw error;
   }
 
   console.log("Seed concluído. Org:", orgId);
