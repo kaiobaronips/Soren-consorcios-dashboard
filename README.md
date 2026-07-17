@@ -77,11 +77,11 @@ pnpm supabase stop                # derruba o Supabase local
 pnpm supabase db reset              # reaplica todas as migrations + seed do zero
 ```
 
-## Estado atual: Fase 2 — Produtos concluída
+## Estado atual: Fase 3 — Atendimento concluída
 
-Concluído até aqui: scaffold do projeto, análise da planilha de referência, Supabase local com migrations (schema completo das 11 tabelas, RLS, grants), seed de desenvolvimento, autenticação (login/logout via Supabase Auth, proteção de rotas por `src/proxy.ts`), layout base com sidebar, e o CRUD de produtos completo — normalização decimal-safe, parser XLSX com testes-oráculo, plano de importação idempotente, script `pnpm import:xlsx`, repository/Server Actions e a página `/produtos` (listagem, filtros, cadastro manual, ativar/inativar). Ver `PLANS.md` para o detalhamento task a task.
+Concluído até aqui: scaffold do projeto, análise da planilha de referência, Supabase local com migrations (schema completo das 11 tabelas, RLS, grants), seed de desenvolvimento, autenticação (login/logout via Supabase Auth, proteção de rotas por `src/proxy.ts`), layout base com sidebar, CRUD de produtos completo (normalização decimal-safe, parser XLSX com testes-oráculo, plano de importação idempotente, script `pnpm import:xlsx`, página `/produtos`), e o fluxo de atendimento completo — cadastro/busca de clientes, domínio de elegibilidade/ranking (`src/domain/eligibility`, `src/domain/recommendation`) e a tela "Novo atendimento" (`/atendimento`). Ver `PLANS.md` para o detalhamento task a task.
 
-Ainda não implementado: cadastro/busca de clientes e regras de elegibilidade/ranking/simulação em código (especificadas em `docs/CALCULATIONS.md`, a serem implementadas nas Fases 3–4), oportunidades/CRM, dashboard comercial, upload/extração de PDF.
+Ainda não implementado: simulação de reajustes IGP-M/IPCA/CDI com sliders e snapshots (Fase 4), oportunidades/CRM, dashboard comercial, upload/extração de PDF.
 
 ## Roadmap de fases
 
@@ -89,7 +89,7 @@ Ainda não implementado: cadastro/busca de clientes e regras de elegibilidade/ra
 |---|---|
 | 1 Fundação | Análise da planilha, scaffold, Supabase local, migrations, auth, perfis, RLS, layout base, docs de planejamento — **concluída** |
 | 2 Produtos | CRUD de produtos, importador XLSX idempotente, listagem, filtros, ativação — **concluída** |
-| 3 Atendimento | Cadastro/busca de clientes, tela "Novo atendimento", elegibilidade, ranking, cards de resultado — disponível na Fase 3 |
+| 3 Atendimento | Cadastro/busca de clientes, tela "Novo atendimento", elegibilidade, ranking, cards de resultado — **concluída** |
 | 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — disponível na Fase 4 |
 | 5 CRM | Oportunidades, Kanban, interações, follow-ups, dashboard comercial — disponível na Fase 5 |
 | 6 PDF | Upload de PDFs de produtos, extração, OCR, revisão humana, publicação, versionamento — disponível na Fase 6 |
@@ -120,6 +120,20 @@ Ao final, imprime um relatório: `Inseridos / Atualizados / Ignorados (sem mudan
 Produtos de veículo (`category=vehicle`) não constam na planilha de referência; um pequeno conjunto demo (`is_demo=true`) é inserido via `pnpm db:seed` para completar o catálogo em desenvolvimento.
 
 Ver `docs/ANALISE_PLANILHA.md` para o mapeamento completo planilha → banco.
+
+## Tela "Novo atendimento"
+
+Fluxo principal de venda, disponível em `/atendimento` para qualquer usuário autenticado (consultor, gestor ou admin):
+
+1. **Cliente**: busca incremental por nome/e-mail/telefone (clientes já cadastrados) ou cadastro de um novo cliente direto na tela, informando nome, renda mensal (opcional) e valor mensal disponível para a parcela.
+2. **Preferências opcionais**: categoria desejada (imóvel/veículo/outro/todas) e prazo desejado — usadas apenas para pontuar o ranking, não filtram a elegibilidade.
+3. Ao submeter, o service `runAtendimento` (`src/services/atendimento.ts`) busca os produtos ativos (`listProducts`) e as configurações da organização (`getOrgSettings`, aba "Configurações" — `eligibilityBasis` e `maxIncomeCommitmentPercent`), roda o domínio de elegibilidade (`src/domain/eligibility`) e o ranking (`src/domain/recommendation`) e devolve:
+   - **Resumo de elegibilidade**: quantidade de planos elegíveis, maior carta pagável, faixa de parcela compatível, melhor folga mensal e comprometimento máximo de renda.
+   - **Cards ranqueados**: cada produto elegível com sua classificação (`compatible`/`attention`), folga mensal, comprometimento de renda e os motivos (`reasons`) que compuseram o score — nunca uma "caixa preta".
+   - **Destaques** (`highlights`): maior carta, menor parcela, menor prazo, menor taxa e melhor equilíbrio carta/parcela entre os elegíveis.
+   - **Alerta de risco**: exibido quando o comprometimento de renda do cliente ultrapassa o teto configurado em `maxIncomeCommitmentPercent` (padrão da organização, ajustável em `/configuracoes`).
+
+A regra de qual parcela conta para elegibilidade (`basis`: recorrente / 1ª–12ª / a maior das duas) é configurável por organização — não fixa no código — e documentada em `docs/CALCULATIONS.md`.
 
 ## Geração de PDF / resumo imprimível
 

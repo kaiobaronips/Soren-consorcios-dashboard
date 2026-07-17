@@ -75,6 +75,30 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 **Desvios notáveis registrados durante a Fase 2:**
 - **Revisão Fable 5**: dois findings *Minor* corrigidos em commit separado antes do gate final — (a) `toProduct` exportada e testada isoladamente (não exigia banco); (b) filtro `search` de `listProducts` sanitizado contra `,`/`()`, que quebravam a sintaxe do `.or(...)` do PostgREST.
 
-### Fases 3–7
+### Fase 3 — Atendimento ✅ Concluída em 2026-07-17
+
+| # | Task | Status |
+|---|---|---|
+| 1 | Domínio de elegibilidade — classificação (`compatible`/`attention`/`incompatible`), `basis` configurável (`regular`/`first`/`max`), folga e comprometimento de renda decimal-safe | ✅ Concluída |
+| 2 | Resumo de elegibilidade (`summarizeEligibility`) validado pelo oráculo dos 4 clientes reais da planilha (João Silva, Maria Souza, Carlos Pereira, JANDIRINHA) | ✅ Concluída |
+| 3 | Ranking determinístico e explicável (`rankConsortiumProducts`) com `reasons` somando o score e `highlights` (maior carta, menor parcela, menor prazo, menor taxa, melhor equilíbrio) | ✅ Concluída |
+| 4 | Repository e Server Actions de clientes com busca incremental e normalização NUMERIC→string | ✅ Concluída |
+| 5 | Página `/clientes` — cadastro e lista filtrada por papel (RLS: consultor vê só os seus) | ✅ Concluída |
+| 6 | Service de atendimento (`src/services/atendimento.ts`) — orquestra produtos ativos + settings da organização, regra de `basis` configurável e alerta de risco por comprometimento de renda | ✅ Concluída |
+| 7 | Tela "Novo atendimento" — resumo de elegibilidade, cards ranqueados com motivos, alerta de risco | ✅ Concluída |
+| 8 | Gate da Fase 3 — fix de revisão (teste de normalização NUMERIC do repository de clientes), `pnpm lint && pnpm typecheck && pnpm test && pnpm build` verdes, push para `main` | ✅ Concluída |
+
+**Entregue na Fase 3:**
+- Domínio de elegibilidade (`src/domain/eligibility`) puro e sem I/O: `classifyProduct` (parcela igual ao disponível é inclusiva/compatível; acima é incompatível; recorrente cabe mas 1ª–12ª estoura vira `attention`, nunca escondido), `isEligible`/`getEligibleProducts` parametrizados por `basis` (`regular`/`first`/`max`), `calculateMonthlySlack` e `calculateIncomeCommitment` com precisão decimal (`decimal.js`).
+- `summarizeEligibility` (`src/domain/eligibility/summary.ts`) agregando maior carta pagável, menor/maior parcela compatível, melhor folga e comprometimento máximo — validado contra o oráculo dos 4 clientes publicados na planilha de referência (João Silva, Maria Souza, Carlos Pereira, JANDIRINHA), incluindo os valores de menor/maior parcela da aba Dashboard.
+- Ranking (`src/domain/recommendation`) determinístico: score somado a partir de `reasons` explicáveis (categoria desejada, prazo desejado, classificação, folga, carta), `highlights` de destaque por critério, e empate resolvido de forma estável (mesma entrada produz sempre a mesma ordem).
+- Repository de clientes (`src/repositories/clients.ts`) com `toClient` pura exportada normalizando NUMERIC→string via `decimal.js` (mesma técnica de `products.ts`), busca incremental sanitizada e Server Actions de CRUD.
+- Página `/clientes`: cadastro e lista, com RLS restringindo consultor aos seus próprios clientes.
+- Service de atendimento (`src/services/atendimento.ts`): orquestra produtos ativos filtrados por categoria desejada + settings da organização (`eligibilityBasis`, `maxIncomeCommitmentPercent`), calcula elegibilidade/ranking/resumo e emite `riskAlert` quando o comprometimento de renda ultrapassa o teto configurado.
+- Tela `/atendimento` ("Novo atendimento"): formulário de cliente/valores, resumo de elegibilidade, cards de produtos ranqueados com motivos do score e alerta de risco visível quando aplicável.
+- Teste unitário de `toClient` cobrindo os três casos de normalização (valor inteiro, `null`), fechando o finding *Minor* pendente da revisão da Fase 2/Task 4.
+- Gate final: `pnpm lint`, `pnpm typecheck`, `pnpm test` (todos os casos obrigatórios do prompt §10/§5 cobertos — ver mapeamento no relatório da Task 8) e `pnpm build` verdes.
+
+### Fases 4–7
 
 Ainda não iniciadas. Serão detalhadas task a task neste mesmo formato à medida que cada fase for planejada e executada.
