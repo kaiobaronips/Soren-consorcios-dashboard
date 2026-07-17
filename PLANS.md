@@ -20,7 +20,7 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 
 ## Progresso
 
-### Fase 1 — Fundação (em andamento)
+### Fase 1 — Fundação ✅ Concluída em 2026-07-17
 
 | # | Task | Status |
 |---|---|---|
@@ -32,10 +32,23 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 | 6 | Seed idempotente (`pnpm db:seed`) — organização demo, 4 usuários, índices financeiros | ✅ Concluída |
 | 7 | Autenticação Supabase — clients SSR (`src/lib/supabase`), `src/proxy.ts`, login/logout | ✅ Concluída |
 | 8 | Layout base — sidebar, perfil do usuário, páginas placeholder das telas principais | ✅ Concluída |
-| 9 | Documentação de planejamento — `AGENTS.md`, `PLANS.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE.md`, `docs/CALCULATIONS.md`, `README.md` | ⏳ Em andamento (esta task) |
-| 10 | Gate da Fase 1 — `pnpm lint && pnpm typecheck && pnpm test` verdes + push para `main` | ⬜ Pendente |
+| 9 | Documentação de planejamento — `AGENTS.md`, `PLANS.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE.md`, `docs/CALCULATIONS.md`, `README.md` | ✅ Concluída |
+| 10 | Gate da Fase 1 — `pnpm lint && pnpm typecheck && pnpm test && pnpm build` verdes, smoke test manual, push para `main` | ✅ Concluída |
 
-Observação: durante a Task 3, as portas padrão do Supabase local (54321/54322/54323...) conflitavam com outro projeto na máquina de desenvolvimento. Todas as portas foram remapeadas em `supabase/config.toml` com um deslocamento de `+10` (API `54331`, DB `54332`, Studio `54333`, etc.) — documentado em `docs/ARCHITECTURE.md` e `README.md`.
+**Entregue na Fase 1:**
+- Scaffold Next.js 16 (Turbopack) + TypeScript estrito + Tailwind + shadcn/ui (`@base-ui/react`) + Vitest.
+- `docs/ANALISE_PLANILHA.md` com a engenharia reversa completa das fórmulas da planilha de referência.
+- Supabase local via CLI/Docker com 4 migrations (`core`, `business`, `rls`, `grants`), totalizando 11 tabelas de domínio no schema `public`, todas com RLS habilitado e isolamento por organização/consultor.
+- Seed idempotente (`pnpm db:seed`): organização demo, 4 usuários (admin, gestor, 2 consultoras), settings e índices econômicos.
+- Autenticação Supabase SSR (`src/lib/supabase`), proteção de rotas via `src/proxy.ts`, fluxo de login/logout.
+- Layout base autenticado: sidebar com navegação condicionada ao papel do usuário, perfil do usuário, páginas placeholder das telas principais (`/`, `/atendimento`, `/clientes`, `/pipeline`, `/produtos`, `/configuracoes`).
+- Documentação de planejamento completa: `AGENTS.md`, `PLANS.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE.md`, `docs/CALCULATIONS.md`, `README.md`.
+- Gate final: `pnpm lint`, `pnpm typecheck`, `pnpm test` (3/3) e `pnpm build` — todos verdes sem necessidade de correções. Smoke test manual confirmou: redirect `/` → `/login` sem sessão, login funcional para `admin@demo.soren.com.br` e `ana@demo.soren.com.br` (senha `demo12345`), visibilidade de "Configurações" restrita ao admin (consultora não vê o item), 11 tabelas no schema `public` com `rowsecurity = true` no Supabase Studio.
+
+**Desvios notáveis registrados durante a Fase 1:**
+- **Portas +10**: as portas padrão do Supabase local (54321/54322/54323...) conflitavam com outro projeto na máquina de desenvolvimento. Todas as portas foram remapeadas em `supabase/config.toml` com um deslocamento de `+10` (API `54331`, DB `54332`, Studio `54333`, Inbucket `54334`, Analytics `54337`) — documentado em `docs/ARCHITECTURE.md` e `README.md`.
+- **`src/proxy.ts`**: a proteção de rotas ficou centralizada neste arquivo (equivalente ao `middleware.ts` do Next.js) em vez de um middleware convencional, conforme convenção adotada na Task 7.
+- **Migration de grants**: PostgREST (via role `authenticator` → `anon`/`authenticated`/`service_role`) retornava "permission denied" mesmo com `service_role`, porque `GRANT` é uma camada avaliada antes do RLS. Foi necessário criar uma quarta migration (`20260716190500_grants.sql`) concedendo privilégios de tabela/sequência/rotina a `anon`, `authenticated` e `service_role` no schema `public`, incluindo `alter default privileges` para tabelas futuras. O RLS continua sendo a barreira de segurança; os grants apenas permitem que as policies sejam avaliadas.
 
 ### Fases 2–7
 
