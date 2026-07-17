@@ -27,3 +27,11 @@ export async function getCurrentProfile(): Promise<Profile> {
     role: data.role,
   };
 }
+
+/** Mapa id -> nome dos perfis da organização atual (RLS: profiles_select libera toda a org). */
+export async function listProfileNames(): Promise<Record<string, string>> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("profiles").select("id, name");
+  if (error) throw error;
+  return Object.fromEntries((data as { id: string; name: string }[]).map((p) => [p.id, p.name]));
+}
