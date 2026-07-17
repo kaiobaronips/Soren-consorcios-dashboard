@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { EligibilityBasis } from "@/domain/eligibility";
 import type { RankedProduct, RankingHighlights } from "@/domain/recommendation";
+import type { ProjectedRates } from "@/domain/financial-calculations";
+import type { FinancialIndex } from "@/repositories/indexes";
+import { SimulationPanel } from "@/features/simulations/simulation-panel";
 
 const CATEGORY_LABEL: Record<string, string> = { property: "Imóvel", vehicle: "Veículo", other: "Outros" };
 const CATEGORY_FILTERS = [
@@ -37,11 +40,23 @@ export function ResultCards({
   highlights,
   basis,
   catalogMinInstallment,
+  clientId,
+  monthlyAvailableAmount,
+  monthlyIncome,
+  indexes,
+  projectedRates,
+  canEditRate,
 }: {
   ranked: RankedProduct[];
   highlights: RankingHighlights;
   basis: EligibilityBasis;
   catalogMinInstallment?: string | null;
+  clientId: string;
+  monthlyAvailableAmount: string;
+  monthlyIncome: string | null;
+  indexes: Record<string, FinancialIndex>;
+  projectedRates: ProjectedRates;
+  canEditRate: boolean;
 }) {
   const [onlyCompatible, setOnlyCompatible] = useState(false);
   const [category, setCategory] = useState("all");
@@ -167,6 +182,17 @@ export function ResultCards({
                     </ul>
                     <p className="mt-1 text-xs font-medium">Pontuação total: {item.score.toFixed(1)}</p>
                   </details>
+                  <div className="flex justify-end pt-1">
+                    <SimulationPanel
+                      product={item.product}
+                      clientId={clientId}
+                      monthlyAvailableAmount={monthlyAvailableAmount}
+                      monthlyIncome={monthlyIncome}
+                      indexes={indexes}
+                      projectedRates={projectedRates}
+                      canEditRate={canEditRate}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             );

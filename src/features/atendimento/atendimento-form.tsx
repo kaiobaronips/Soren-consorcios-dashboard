@@ -6,6 +6,8 @@ import type { Client } from "@/repositories/clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ProjectedRates } from "@/domain/financial-calculations";
+import type { FinancialIndex } from "@/repositories/indexes";
 import { atender } from "./actions";
 import { SummaryHeader } from "./summary-header";
 import { ResultCards } from "./result-cards";
@@ -25,7 +27,15 @@ const TERMS = [
   { value: "240", label: "240 meses" },
 ];
 
-export function AtendimentoForm() {
+export function AtendimentoForm({
+  indexes,
+  projectedRates,
+  canEditRate,
+}: {
+  indexes: Record<string, FinancialIndex>;
+  projectedRates: ProjectedRates;
+  canEditRate: boolean;
+}) {
   const [state, action, pending] = useActionState(atender, undefined);
 
   const [query, setQuery] = useState("");
@@ -189,6 +199,12 @@ export function AtendimentoForm() {
             highlights={state.result.highlights}
             basis={state.result.basis}
             catalogMinInstallment={state.catalogMinInstallment}
+            clientId={state.client.id}
+            monthlyAvailableAmount={state.client.monthlyAvailableAmount}
+            monthlyIncome={state.client.monthlyIncome}
+            indexes={indexes}
+            projectedRates={projectedRates}
+            canEditRate={canEditRate}
           />
         </div>
       )}
