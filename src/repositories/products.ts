@@ -25,7 +25,7 @@ const COLUMNS = "id, product_name, product_code, administrator_name, category, c
  * Os campos abaixo chegam como number em runtime mesmo o tipo declarando string;
  * normalizamos com decimal.js para a string canônica antes de expor ao domínio.
  */
-type Row = {
+export type Row = {
   id: string; product_name: string; product_code: string; administrator_name: string;
   category: Product["category"]; credit_amount: number; term_months: number;
   total_administration_fee_percent: number; first_12_installment_amount: number | null;
@@ -33,7 +33,7 @@ type Row = {
   status: Product["status"]; is_demo: boolean;
 };
 
-function toProduct(r: Row): Product {
+export function toProduct(r: Row): Product {
   return {
     id: r.id, productName: r.product_name, productCode: r.product_code,
     administratorName: r.administrator_name, category: r.category,
@@ -55,7 +55,11 @@ export async function listProducts(filters: ProductFilters): Promise<Product[]> 
     .order("category").order("credit_amount", { ascending: false }).order("term_months");
   if (filters.category) q = q.eq("category", filters.category);
   if (filters.status) q = q.eq("status", filters.status);
-  if (filters.search) q = q.or(`product_name.ilike.%${filters.search}%,product_code.ilike.%${filters.search}%`);
+  if (filters.search) {
+    // Vírgulas e parênteses quebram a sintaxe do .or(...) do PostgREST; removemos antes de montar o filtro.
+    const term = filters.search.replace(/[,()]/g, " ").trim();
+    if (term) q = q.or(`product_name.ilike.%${term}%,product_code.ilike.%${term}%`);
+  }
   const { data, error } = await q;
   if (error) throw error;
   return (data as Row[]).map(toProduct);
