@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applySimpleNetDiscount,
   calculateCompoundFutureValue, calculateMonthlyContributionFutureValue,
   cdiEffectiveAnnualRate, monthlyEquivalentRate,
 } from "./investment";
@@ -39,5 +40,19 @@ describe("calculateCompoundFutureValue (caso 11: CDI juros compostos)", () => {
 describe("cdiEffectiveAnnualRate (prompt §17)", () => {
   it("110% do CDI de 10,5% = 11,55%", () => {
     expect(cdiEffectiveAnnualRate("10.5", "110")).toBe("11.5500");
+  });
+});
+
+describe("applySimpleNetDiscount", () => {
+  it("desconta IR sobre o rendimento e taxa adm sobre o bruto", () => {
+    // bruto 12210.25, rendimento 2210.25, IR 15% = 331.5375, taxa adm 1% de 12210.25 = 122.1025
+    // líquido = 12210.25 - 331.5375 - 122.1025 = 11756.61
+    expect(applySimpleNetDiscount("12210.25", "2210.25", "15", "1")).toBe("11756.61");
+  });
+  it("sem desconto (0/0) mantém o bruto", () => {
+    expect(applySimpleNetDiscount("12210.25", "2210.25", "0", "0")).toBe("12210.25");
+  });
+  it("nunca fica negativo mesmo com descontos exagerados", () => {
+    expect(applySimpleNetDiscount("100.00", "100.00", "90", "50")).toBe("0.00");
   });
 });

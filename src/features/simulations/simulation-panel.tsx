@@ -38,7 +38,9 @@ import {
   type SimulationAssumptions,
 } from "@/domain/financial-calculations";
 import { AssumptionsBlock } from "./assumptions-block";
+import { CdiCompoundSlider } from "./cdi-compound-slider";
 import { CorrectionSlider } from "./correction-slider";
+import { InvestmentComparison } from "./investment-comparison";
 import { saveSimulationAction } from "./actions";
 
 export type SimulationPanelProduct = {
@@ -292,6 +294,32 @@ export function SimulationPanel({
           </div>
 
           <AssumptionsBlock assumptions={assumptions} />
+
+          <details className="space-y-3 rounded-md border p-3">
+            <summary className="cursor-pointer font-medium">Comparar com investimentos</summary>
+            <div className="space-y-6 pt-2">
+              <div>
+                <p className="mb-2 text-sm font-medium">Simulação CDI (juros compostos)</p>
+                <CdiCompoundSlider
+                  cdiAnnualRatePercent={indexes.CDI?.annualRatePercent ?? "0"}
+                  creditAmount={product.creditAmount}
+                  consortiumAnnualRatePercent={annualRatePercent}
+                  termMonths={product.termMonths}
+                  defaultMonthlyContribution={product.regularInstallmentAmount}
+                />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium">Comparação por índice</p>
+                <InvestmentComparison
+                  creditAmount={product.creditAmount}
+                  monthlyInstallment={product.regularInstallmentAmount}
+                  consortiumAnnualRatePercent={annualRatePercent}
+                  termMonths={product.termMonths}
+                  indexes={indexes}
+                />
+              </div>
+            </div>
+          </details>
 
           <form action={saveAction} className="space-y-2">
             <input type="hidden" name="clientId" value={clientId} />

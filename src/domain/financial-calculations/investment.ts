@@ -29,3 +29,22 @@ export function calculateCompoundFutureValue(initialAmount: string, annualRatePe
 export function cdiEffectiveAnnualRate(cdiAnnualRatePercent: string, cdiPercentage: string): string {
   return new Decimal(cdiAnnualRatePercent).times(new Decimal(cdiPercentage).div(100)).toFixed(4);
 }
+
+/**
+ * Desconto simples e opcional (prompt §17, checkbox "descontar IR/taxa adm"): alíquota de IR informada
+ * pelo usuário incide só sobre o rendimento; taxa de administração/custódia informada incide sobre o
+ * montante bruto. NÃO é a tabela regressiva real de IR — é uma estimativa simplificada, sempre rotulada
+ * como tal na UI. Retorna o montante líquido estimado (nunca negativo).
+ */
+export function applySimpleNetDiscount(
+  grossAmount: string,
+  earnings: string,
+  irRatePercent: string,
+  adminFeeRatePercent: string,
+): string {
+  const gross = new Decimal(grossAmount);
+  const irDiscount = new Decimal(earnings).times(new Decimal(irRatePercent).div(100));
+  const adminDiscount = gross.times(new Decimal(adminFeeRatePercent).div(100));
+  const net = gross.minus(irDiscount).minus(adminDiscount);
+  return Decimal.max(net, 0).toFixed(2, Decimal.ROUND_HALF_UP);
+}
