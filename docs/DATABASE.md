@@ -6,6 +6,7 @@ Schema real do banco (Supabase/PostgreSQL), conforme as migrations em `supabase/
 2. `20260716182819_business.sql` — as 11 tabelas de domínio, enums, índices.
 3. `20260716184124_rls.sql` — políticas de RLS de todas as tabelas.
 4. `20260716190500_grants.sql` — grants de tabela para `anon`/`authenticated`/`service_role`.
+5. `20260717130508_harden_grants.sql` — endurecimento por menor privilégio: `anon` sem nenhum acesso a tabelas (só USAGE no schema), `authenticated` restrito a SELECT/INSERT/UPDATE/DELETE (sem TRUNCATE/REFERENCES/TRIGGER), `GRANT ALL` reservado ao `service_role`; default privileges idem para tabelas futuras.
 
 ## Convenções
 
