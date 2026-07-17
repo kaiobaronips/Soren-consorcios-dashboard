@@ -77,18 +77,18 @@ pnpm supabase stop                # derruba o Supabase local
 pnpm supabase db reset              # reaplica todas as migrations + seed do zero
 ```
 
-## Estado atual: Fase 1 — Fundação (em andamento)
+## Estado atual: Fase 2 — Produtos concluída
 
-Concluído até aqui: scaffold do projeto, análise da planilha de referência, Supabase local com migrations (schema completo das 11 tabelas, RLS, grants), seed de desenvolvimento, autenticação (login/logout via Supabase Auth, proteção de rotas por `src/proxy.ts`), layout base com sidebar e páginas placeholder das telas principais, e esta documentação. Ver `PLANS.md` para o detalhamento task a task.
+Concluído até aqui: scaffold do projeto, análise da planilha de referência, Supabase local com migrations (schema completo das 11 tabelas, RLS, grants), seed de desenvolvimento, autenticação (login/logout via Supabase Auth, proteção de rotas por `src/proxy.ts`), layout base com sidebar, e o CRUD de produtos completo — normalização decimal-safe, parser XLSX com testes-oráculo, plano de importação idempotente, script `pnpm import:xlsx`, repository/Server Actions e a página `/produtos` (listagem, filtros, cadastro manual, ativar/inativar). Ver `PLANS.md` para o detalhamento task a task.
 
-Ainda não implementado: qualquer regra de negócio de elegibilidade/ranking/simulação em código (especificada em `docs/CALCULATIONS.md`, a ser implementada nas Fases 2–4), CRUD de produtos/clientes/oportunidades, dashboard comercial, upload/extração de PDF.
+Ainda não implementado: cadastro/busca de clientes e regras de elegibilidade/ranking/simulação em código (especificadas em `docs/CALCULATIONS.md`, a serem implementadas nas Fases 3–4), oportunidades/CRM, dashboard comercial, upload/extração de PDF.
 
 ## Roadmap de fases
 
 | Fase | Conteúdo |
 |---|---|
-| 1 Fundação | Análise da planilha, scaffold, Supabase local, migrations, auth, perfis, RLS, layout base, docs de planejamento — **em andamento** |
-| 2 Produtos | CRUD de produtos, importador XLSX idempotente, listagem, filtros, ativação — disponível na Fase 2 |
+| 1 Fundação | Análise da planilha, scaffold, Supabase local, migrations, auth, perfis, RLS, layout base, docs de planejamento — **concluída** |
+| 2 Produtos | CRUD de produtos, importador XLSX idempotente, listagem, filtros, ativação — **concluída** |
 | 3 Atendimento | Cadastro/busca de clientes, tela "Novo atendimento", elegibilidade, ranking, cards de resultado — disponível na Fase 3 |
 | 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — disponível na Fase 4 |
 | 5 CRM | Oportunidades, Kanban, interações, follow-ups, dashboard comercial — disponível na Fase 5 |
@@ -103,7 +103,23 @@ Não executado neste ciclo. O plano é rodar localmente (`pnpm dev`) durante tod
 
 ## Importação de dados (XLSX)
 
-Importador `pnpm import:xlsx references/consorcio.xlsx` — idempotente, dedup por `product_code + category + term_months + credit_amount`, com relatório de inseridos/atualizados/ignorados/inválidos/erros — disponível na Fase 2. Ver `docs/ANALISE_PLANILHA.md` para o mapeamento completo planilha → banco.
+Com o Supabase local rodando (`pnpm supabase start`) e `.env.local` configurado, importe (ou reimporte) a planilha de produtos:
+
+```bash
+pnpm import:xlsx references/consorcio.xlsx
+```
+
+O importador lê a aba "Consórcios" do arquivo, normaliza os valores monetários/percentuais com `decimal.js` e compara cada linha contra o banco pela chave de negócio `product_code + category + term_months + credit_amount`:
+
+- **Insere** produtos novos (chave inexistente no banco).
+- **Atualiza** produtos cuja chave já existe mas algum campo mudou.
+- **Ignora** produtos já importados e sem alteração — reexecutar o comando várias vezes é seguro (idempotente) e não duplica nem sobrescreve à toa.
+
+Ao final, imprime um relatório: `Inseridos / Atualizados / Ignorados (sem mudança) / Linhas inválidas / Erros`. Linhas inválidas (dados fora do formato esperado) e erros de gravação não interrompem o processamento das demais linhas.
+
+Produtos de veículo (`category=vehicle`) não constam na planilha de referência; um pequeno conjunto demo (`is_demo=true`) é inserido via `pnpm db:seed` para completar o catálogo em desenvolvimento.
+
+Ver `docs/ANALISE_PLANILHA.md` para o mapeamento completo planilha → banco.
 
 ## Geração de PDF / resumo imprimível
 

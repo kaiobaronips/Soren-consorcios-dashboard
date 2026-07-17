@@ -50,6 +50,31 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 - **`src/proxy.ts`**: a proteção de rotas ficou centralizada neste arquivo (equivalente ao `middleware.ts` do Next.js) em vez de um middleware convencional, conforme convenção adotada na Task 7.
 - **Migration de grants**: PostgREST (via role `authenticator` → `anon`/`authenticated`/`service_role`) retornava "permission denied" mesmo com `service_role`, porque `GRANT` é uma camada avaliada antes do RLS. Foi necessário criar uma quarta migration (`20260716190500_grants.sql`) concedendo privilégios de tabela/sequência/rotina a `anon`, `authenticated` e `service_role` no schema `public`, incluindo `alter default privileges` para tabelas futuras. O RLS continua sendo a barreira de segurança; os grants apenas permitem que as policies sejam avaliadas.
 
-### Fases 2–7
+### Fase 2 — Produtos ✅ Concluída em 2026-07-17
+
+| # | Task | Status |
+|---|---|---|
+| 1 | Normalização de valores monetários e percentuais com `decimal.js` (`toMoneyString`, `fractionToPercentPoints`) | ✅ Concluída |
+| 2 | Parser XLSX da aba Consórcios com ExcelJS + testes-oráculo (63 produtos) | ✅ Concluída |
+| 3 | Plano de importação puro com dedup e idempotência (`product_code + category + term_months + credit_amount`) | ✅ Concluída |
+| 4 | Script `pnpm import:xlsx` idempotente com relatório (inseridos/atualizados/ignorados/inválidos/erros) + produtos demo de veículo + fix seed | ✅ Concluída |
+| 5 | Repository/actions de produtos com Zod e auditoria (`src/repositories/products.ts`) | ✅ Concluída |
+| 6 | Página `/produtos` — listagem, filtros, cadastro manual, ativar/inativar | ✅ Concluída |
+| 7 | Gate da Fase 2 — fix de revisão (sanitização do filtro de busca + teste de normalização NUMERIC), `pnpm lint && pnpm typecheck && pnpm test && pnpm build` verdes, 3ª execução idempotente do importador, push para `main` | ✅ Concluída |
+
+**Entregue na Fase 2:**
+- Normalização decimal-safe de valores da planilha (`src/lib/xlsx/normalize.ts`) evitando erro de float em conversões monetárias/percentuais.
+- Parser da aba "Consórcios" do `references/consorcio.xlsx` (`src/lib/xlsx/parse-consorcio.ts`) com testes-oráculo cobrindo os 63 produtos reais da planilha.
+- Plano de importação puro (`src/lib/xlsx/import-plan.ts`) que compara planilha vs. banco e decide inserir/atualizar/ignorar por chave de negócio, sem efeitos colaterais — idempotência garantida por design, testada com múltiplas execuções.
+- Script `scripts/import-xlsx.ts` (`pnpm import:xlsx <arquivo>`) que aplica o plano contra o Supabase local e imprime relatório; produtos demo de veículo (`is_demo=true`) inseridos via seed para completar o catálogo de teste.
+- Repository de produtos (`src/repositories/products.ts`) com normalização NUMERIC→string via `decimal.js` (PostgREST retorna `number`, perdendo zeros à direita), Server Actions de cadastro manual e ativação/inativação validadas com Zod, e sanitização do filtro de busca livre (remoção de `,`/`()` antes de montar o `.or(...ilike...)` do PostgREST) para evitar quebra de sintaxe do filtro.
+- Página `/produtos`: listagem com filtros (categoria, status, busca), formulário de cadastro manual, toggle ativar/inativar.
+- Teste unitário de `toProduct` cobrindo os três casos de normalização (valor inteiro, fração percentual, `null`) sem dependência de banco.
+- Gate final: `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes. Verificação de idempotência: 3ª execução consecutiva de `pnpm import:xlsx references/consorcio.xlsx` produziu `Inseridos: 0 / Ignorados: 63`, com contagens no banco inalteradas (`property/is_demo=false` = 63, `vehicle/is_demo=true` = 8).
+
+**Desvios notáveis registrados durante a Fase 2:**
+- **Revisão Fable 5**: dois findings *Minor* corrigidos em commit separado antes do gate final — (a) `toProduct` exportada e testada isoladamente (não exigia banco); (b) filtro `search` de `listProducts` sanitizado contra `,`/`()`, que quebravam a sintaxe do `.or(...)` do PostgREST.
+
+### Fases 3–7
 
 Ainda não iniciadas. Serão detalhadas task a task neste mesmo formato à medida que cada fase for planejada e executada.
