@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -32,7 +33,9 @@ export function ClientsTable({
           {clients.map((c) => (
             <TableRow key={c.id}>
               <TableCell>
-                <span className="font-medium">{c.name}</span>
+                <Link href={`/clientes/${c.id}`} className="font-medium hover:underline">
+                  {c.name}
+                </Link>
                 {c.status !== "active" && <Badge variant="secondary" className="ml-2">{c.status}</Badge>}
               </TableCell>
               <TableCell>

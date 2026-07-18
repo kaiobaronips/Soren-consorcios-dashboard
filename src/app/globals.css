@@ -128,3 +128,14 @@
     @apply font-sans;
   }
 }
+
+/* Resumo imprimível (prompt §23): esconde a navegação e usa a página inteira ao imprimir. */
+@media print {
+  [data-slot="sidebar-wrapper"] > [data-slot="sidebar"],
+  [data-slot="sidebar-trigger"] {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}
