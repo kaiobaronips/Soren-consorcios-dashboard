@@ -59,6 +59,19 @@ describe("computeSimulation (pura)", () => {
     // 600000 × 1.065^8 = 992997.40 (mesmo caso 8 do domínio de correção)
     expect(result.projectedCreditAmount).toBe("992997.40");
     expect(result.baseInstallmentAmount).toBe("3220.00");
+    // sem taxa CDI no input, a comparação fica sem valor
+    expect(result.cdiComparisonValue).toBeNull();
+  });
+
+  it("calcula cdiComparisonValue quando a taxa CDI é capturada no snapshot (§16 Modo A)", () => {
+    const input: SimulationSnapshotInput = {
+      product: toProductSnapshot(baseProduct({ creditAmount: "600000.00", regularInstallmentAmount: "3220.00" })),
+      assumptions: baseAssumptions({ annualRatePercent: "6.5" }),
+      selectedMonth: 97,
+      cdiAnnualRatePercent: "10.5",
+    };
+    // FV da parcela 3220 investida ao CDI 10,5% a.a. por 97 meses (aporte fim de mês)
+    expect(computeSimulation(input).cdiComparisonValue).toBe("478409.07");
   });
 });
 

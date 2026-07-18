@@ -19,5 +19,6 @@ export const saveSimulationSchema = z.object({
   adjustmentFrequencyMonths: z.coerce.number().int().positive("Frequência deve ser positiva"),
   monthlyAvailableAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Valor inválido (use 1234.56)"),
   monthlyIncome: z.string().regex(/^\d+(\.\d{1,2})?$/, "Valor inválido (use 1234.56)").optional().or(z.literal("")),
+  cdiAnnualRatePercent: z.string().regex(/^\d+(\.\d{1,4})?$/, "Taxa CDI inválida").optional().or(z.literal("")),
 });
 export type SaveSimulationInput = z.infer<typeof saveSimulationSchema>;

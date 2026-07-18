@@ -4,6 +4,7 @@ import { getCurrentProfile } from "@/repositories/profiles";
 import type { Product } from "@/repositories/products";
 import {
   calculateCorrectedCredit,
+  calculateMonthlyContributionFutureValue,
   calculateTotalProjectedPayments,
   contractYearOfMonth,
   correctedInstallmentForMonth,
@@ -27,6 +28,11 @@ export type SimulationSnapshotInput = {
   };
   assumptions: SimulationAssumptions;
   selectedMonth: number;
+  /**
+   * Taxa CDI anual (pontos %) capturada no momento da simulação, usada para a comparação
+   * com investimento (§16 Modo A). Opcional: quando ausente, a comparação fica sem valor.
+   */
+  cdiAnnualRatePercent?: string | null;
 };
 
 export type SimulationComputed = {
@@ -36,6 +42,8 @@ export type SimulationComputed = {
   baseInstallmentAmount: string;
   projectedInstallmentAmount: string;
   projectedTotalPaid: string;
+  /** FV da parcela recorrente investida ao CDI até o mês selecionado (§16 Modo A). */
+  cdiComparisonValue: string | null;
 };
 
 /**
@@ -61,9 +69,14 @@ export function computeSimulation(input: SimulationSnapshotInput): SimulationCom
     product.regularInstallmentAmount, assumptions.annualRatePercent, selectedMonth,
   );
 
+  const cdiComparisonValue = input.cdiAnnualRatePercent
+    ? calculateMonthlyContributionFutureValue(product.regularInstallmentAmount, input.cdiAnnualRatePercent, selectedMonth)
+    : null;
+
   return {
     selectedYear, baseCreditAmount, projectedCreditAmount,
     baseInstallmentAmount, projectedInstallmentAmount, projectedTotalPaid,
+    cdiComparisonValue,
   };
 }
 
@@ -189,6 +202,7 @@ export async function saveSimulation(params: {
     base_installment_amount: computed.baseInstallmentAmount,
     projected_installment_amount: computed.projectedInstallmentAmount,
     projected_total_paid: computed.projectedTotalPaid,
+    cdi_comparison_value: computed.cdiComparisonValue,
   }).select("id").single();
   if (error) throw error;
   return data.id;

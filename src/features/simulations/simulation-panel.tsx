@@ -334,6 +334,7 @@ export function SimulationPanel({
             <input type="hidden" name="adjustmentFrequencyMonths" value={assumptions.adjustmentFrequencyMonths} />
             <input type="hidden" name="monthlyAvailableAmount" value={monthlyAvailableAmount} />
             <input type="hidden" name="monthlyIncome" value={monthlyIncome ?? ""} />
+            <input type="hidden" name="cdiAnnualRatePercent" value={indexes.CDI?.annualRatePercent ?? ""} />
 
             {saveState?.error && <p className="text-sm text-destructive">{saveState.error}</p>}
             {saveState?.simulationId && (

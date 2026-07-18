@@ -36,6 +36,7 @@ export async function saveSimulationAction(
       adjustmentFrequencyMonths: d.adjustmentFrequencyMonths,
     },
     selectedMonth: d.selectedMonth,
+    cdiAnnualRatePercent: d.cdiAnnualRatePercent || null,
   };
 
   const simulationId = await saveSimulation({
