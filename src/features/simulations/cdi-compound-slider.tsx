@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Decimal from "decimal.js";
 import {
   CartesianGrid,
   Line,
@@ -16,23 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import {
-  applySimpleNetDiscount,
-  calculateCompoundFutureValue,
-  calculateCorrectedCredit,
-  calculateMonthlyContributionFutureValue,
-  cdiEffectiveAnnualRate,
-} from "@/domain/financial-calculations";
+import { cdiCompoundProjection } from "@/domain/financial-calculations";
 
 const CDI_PERCENTAGE_OPTIONS = ["80", "90", "100", "110", "120"] as const;
 
 /**
  * Slider de simulação em juros compostos sobre um percentual do CDI (prompt §17), com
- * comparação direta à carta corrigida do consórcio. Toda a matemática financeira vem do
- * domínio (`calculateMonthlyContributionFutureValue`, `calculateCompoundFutureValue`,
- * `cdiEffectiveAnnualRate`, `applySimpleNetDiscount`, `calculateCorrectedCredit`); o
- * componente só monta estado de UI e soma os dois resultados (aporte + capital inicial),
- * uma operação aritmética simples, não uma fórmula financeira nova.
+ * comparação direta à carta corrigida do consórcio. Toda a matemática financeira vive no
+ * domínio: o componente apenas coleta o estado de UI, chama `cdiCompoundProjection` e
+ * renderiza o resultado — nenhum cálculo financeiro aqui.
  */
 export function CdiCompoundSlider({
   cdiAnnualRatePercent,
@@ -60,44 +51,43 @@ export function CdiCompoundSlider({
   const isCustomPercentage = !CDI_PERCENTAGE_OPTIONS.includes(cdiPercentage as (typeof CDI_PERCENTAGE_OPTIONS)[number]);
   const effectiveCdiPercentage = isCustomPercentage ? (customCdiPercentage.trim() === "" ? "100" : customCdiPercentage) : cdiPercentage;
 
-  const effectiveAnnualRate = useMemo(
-    () => cdiEffectiveAnnualRate(cdiAnnualRatePercent, effectiveCdiPercentage),
-    [cdiAnnualRatePercent, effectiveCdiPercentage],
-  );
-
-  const months = years * 12;
   const safeInitialAmount = initialAmount.trim() === "" ? "0" : initialAmount;
   const safeMonthlyContribution = monthlyContribution.trim() === "" ? "0" : monthlyContribution;
 
-  const fvContribution = calculateMonthlyContributionFutureValue(safeMonthlyContribution, effectiveAnnualRate, months);
-  const fvInitial = calculateCompoundFutureValue(safeInitialAmount, effectiveAnnualRate, String(years));
-  const grossAmount = new Decimal(fvContribution).plus(fvInitial).toFixed(2, Decimal.ROUND_HALF_UP);
-  const totalContributed = new Decimal(safeMonthlyContribution).times(months).plus(safeInitialAmount).toFixed(2, Decimal.ROUND_HALF_UP);
-  const earnings = new Decimal(grossAmount).minus(totalContributed).toFixed(2, Decimal.ROUND_HALF_UP);
+  const projection = useMemo(
+    () =>
+      cdiCompoundProjection({
+        cdiAnnualRatePercent,
+        cdiPercentage: effectiveCdiPercentage,
+        monthlyContribution: safeMonthlyContribution,
+        initialAmount: safeInitialAmount,
+        years,
+        creditAmount,
+        consortiumAnnualRatePercent,
+        discount: discountTaxes ? { irRatePercent, adminFeeRatePercent } : undefined,
+      }),
+    [cdiAnnualRatePercent, effectiveCdiPercentage, safeMonthlyContribution, safeInitialAmount, years, creditAmount, consortiumAnnualRatePercent, discountTaxes, irRatePercent, adminFeeRatePercent],
+  );
 
-  const displayAmount = discountTaxes
-    ? applySimpleNetDiscount(grossAmount, earnings, irRatePercent, adminFeeRatePercent)
-    : grossAmount;
+  const {
+    effectiveAnnualRatePercent: effectiveAnnualRate,
+    totalContributed,
+    earnings,
+    displayAmount,
+    correctedCredit,
+    differenceVsCredit,
+  } = projection;
+  const isNegativeDifference = differenceVsCredit.startsWith("-");
 
-  const correctedCredit = calculateCorrectedCredit(creditAmount, consortiumAnnualRatePercent, years);
-  const differenceVsCredit = new Decimal(displayAmount).minus(correctedCredit).toFixed(2, Decimal.ROUND_HALF_UP);
-
-  const chartData = useMemo(() => {
-    const points: { ano: string; montante: number; carta: number }[] = [];
-    for (let y = 1; y <= years; y++) {
-      const fvC = calculateMonthlyContributionFutureValue(safeMonthlyContribution, effectiveAnnualRate, y * 12);
-      const fvI = calculateCompoundFutureValue(safeInitialAmount, effectiveAnnualRate, String(y));
-      const yearGross = new Decimal(fvC).plus(fvI).toFixed(2, Decimal.ROUND_HALF_UP);
-      const yearEarnings = new Decimal(yearGross).minus(new Decimal(safeMonthlyContribution).times(y * 12).plus(safeInitialAmount)).toFixed(2, Decimal.ROUND_HALF_UP);
-      const yearAmount = discountTaxes ? applySimpleNetDiscount(yearGross, yearEarnings, irRatePercent, adminFeeRatePercent) : yearGross;
-      points.push({
-        ano: `Ano ${y}`,
-        montante: Number(yearAmount),
-        carta: Number(calculateCorrectedCredit(creditAmount, consortiumAnnualRatePercent, y)),
-      });
-    }
-    return points;
-  }, [years, safeMonthlyContribution, safeInitialAmount, effectiveAnnualRate, discountTaxes, irRatePercent, adminFeeRatePercent, creditAmount, consortiumAnnualRatePercent]);
+  const chartData = useMemo(
+    () =>
+      projection.yearly.map((point) => ({
+        ano: `Ano ${point.year}`,
+        montante: Number(point.balance),
+        carta: Number(point.correctedCredit),
+      })),
+    [projection],
+  );
 
   return (
     <div className="space-y-4">
@@ -213,7 +203,7 @@ export function CdiCompoundSlider({
         </div>
         <div className="col-span-2">
           <p className="text-xs text-muted-foreground">Diferença (montante − carta corrigida)</p>
-          <p className={`font-medium ${new Decimal(differenceVsCredit).isNegative() ? "text-destructive" : "text-green-700 dark:text-green-400"}`}>
+          <p className={`font-medium ${isNegativeDifference ? "text-destructive" : "text-green-700 dark:text-green-400"}`}>
             {formatCurrency(differenceVsCredit)}
           </p>
         </div>
