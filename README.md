@@ -90,7 +90,7 @@ Ainda não implementado: simulação de reajustes IGP-M/IPCA/CDI com sliders e s
 | 1 Fundação | Análise da planilha, scaffold, Supabase local, migrations, auth, perfis, RLS, layout base, docs de planejamento — **concluída** |
 | 2 Produtos | CRUD de produtos, importador XLSX idempotente, listagem, filtros, ativação — **concluída** |
 | 3 Atendimento | Cadastro/busca de clientes, tela "Novo atendimento", elegibilidade, ranking, cards de resultado — **concluída** |
-| 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — disponível na Fase 4 |
+| 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — **concluída** |
 | 5 CRM | Oportunidades, Kanban, interações, follow-ups, dashboard comercial — disponível na Fase 5 |
 | 6 PDF | Upload de PDFs de produtos, extração, OCR, revisão humana, publicação, versionamento — disponível na Fase 6 |
 | 7 Qualidade | Testes completos (unitários + E2E), segurança, responsividade, performance, build final — disponível na Fase 7 |
@@ -135,9 +135,19 @@ Fluxo principal de venda, disponível em `/atendimento` para qualquer usuário a
 
 A regra de qual parcela conta para elegibilidade (`basis`: recorrente / 1ª–12ª / a maior das duas) é configurável por organização — não fixa no código — e documentada em `docs/CALCULATIONS.md`.
 
+## Simulador financeiro
+
+A partir de qualquer card do atendimento, o botão **"Simular"** abre o painel de simulação:
+
+- **Slider de tempo** (0 → prazo do produto): recalcula ao vivo, no cliente, a carta corrigida, a parcela no período, o total pago até o mês e a correção acumulada — usando as funções puras de `src/domain/financial-calculations` (nenhum round-trip por movimento do slider). Imóveis usam IGP-M; veículos, IPCA.
+- **Bloco de premissas**: índice, taxa anual, origem, data de atualização, tipo (projetada/histórica/manual) e o aviso de que se trata de estimativa, não garantia. As taxas vêm de `financial_indexes` — nunca hardcoded.
+- **Cenários**: conservador / base / agressivo / personalizado (o input de taxa personalizada só aparece para admin/manager).
+- **`CdiCompoundSlider`** e **comparação com investimentos** (Modo A = aporte igual à parcela; Modo B = capital igual à carta): evolução patrimonial em gráfico, com a ressalva de que consórcio e investimento têm objetivos, riscos e liquidez diferentes.
+- **Salvar simulação**: grava um snapshot imutável (produto + premissas + comparação com CDI no momento). Editar o produto/taxa depois não altera simulações já salvas. O histórico fica na página do cliente (`/clientes/[id]`) e cada simulação gera um resumo imprimível (`/simulacoes/[id]/resumo`).
+
 ## Geração de PDF / resumo imprimível
 
-Resumo de simulação como página print-friendly do navegador (sem dependência de biblioteca de PDF) — disponível na Fase 4. Upload e extração de PDFs de produtos (com OCR de fallback) — disponível na Fase 6.
+Resumo de simulação como página print-friendly do navegador (`@media print`, sem dependência de biblioteca de PDF), em `/simulacoes/[id]/resumo` — **concluído na Fase 4**. Upload e extração de PDFs de produtos (com OCR de fallback) — disponível na Fase 6.
 
 ## Segurança e LGPD
 

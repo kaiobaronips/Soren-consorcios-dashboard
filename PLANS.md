@@ -99,6 +99,28 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 - Teste unitário de `toClient` cobrindo os três casos de normalização (valor inteiro, `null`), fechando o finding *Minor* pendente da revisão da Fase 2/Task 4.
 - Gate final: `pnpm lint`, `pnpm typecheck`, `pnpm test` (todos os casos obrigatórios do prompt §10/§5 cobertos — ver mapeamento no relatório da Task 8) e `pnpm build` verdes.
 
-### Fases 4–7
+### Fase 4 — Simulador Financeiro (concluída em 2026-07-18)
+
+| # | Task | Status |
+|---|---|---|
+| 1 | Núcleo de correção (`correction.ts`): fatores anuais, carta e parcela corrigidas, ano de contrato do mês — casos 8 (IGP-M), 9 (IPCA), 10 (taxa zero) | ✅ Concluída |
+| 2 | Cronograma e total projetado (`schedule.ts`): total pago por soma mensal, limite pelo prazo (caso 14), série anual sem duplicar ano | ✅ Concluída |
+| 3 | Valor futuro de investimentos (`investment.ts`): aporte mensal, capital inicial, CDI efetivo — casos 11, 12, 13 | ✅ Concluída |
+| 4 | Comparação consórcio × investimentos (`comparison.ts`) — Modos A e B — + barrel do domínio financeiro | ✅ Concluída |
+| 5 | Cenários (`assumptions.ts`) e repository de índices financeiros (`indexes.ts`) | ✅ Concluída |
+| 6 | Simulações com snapshot imutável (`computeSimulation` pura + repository/actions) — casos 19, 20 | ✅ Concluída |
+| 7 | Painel de simulação: slider de correção, cenários, bloco de premissas (botão "Simular" habilitado no atendimento) | ✅ Concluída |
+| 8 | `CdiCompoundSlider` + comparação com investimentos; projeção CDI extraída para o domínio (`cdi.ts`, pura e testada) | ✅ Concluída |
+| 9 | Histórico de simulações do cliente (`/clientes/[id]`) e resumo imprimível (`/simulacoes/[id]/resumo`); comparação com CDI persistida no snapshot | ✅ Concluída |
+| 10 | Gate da Fase 4 — `pnpm lint && pnpm typecheck && pnpm test` (105 testes) `&& pnpm build` verdes, push para `main` | ✅ Concluída |
+
+**Entregue na Fase 4:**
+- Domínio financeiro completo em `src/domain/financial-calculations` (funções puras, `decimal.js`, 100% testado): correção IGP-M/IPCA por ano de contrato, cronograma com total pago somado mês a mês, valor futuro de aporte mensal e capital inicial, CDI efetivo, comparação consórcio × investimentos (Modos A/B) e projeção do `CdiCompoundSlider`.
+- Cenários (conservador/base/agressivo/personalizado) e repository de índices econômicos lidos de `financial_indexes` com origem e data (nenhuma taxa hardcoded).
+- Simulações com **snapshot imutável**: `computeSimulation` opera sempre sobre o snapshot gravado; editar o produto/taxa depois não altera simulações salvas (casos 19 e 20). A comparação com CDI é capturada no snapshot.
+- UI: painel de simulação (slider de tempo recalculando no cliente via funções puras do domínio, sem round-trip), bloco de premissas com aviso de estimativa, cenários, `CdiCompoundSlider` e comparação com investimentos em gráficos (Recharts); histórico por cliente e resumo imprimível (`@media print`, sem lib de PDF).
+- Casos obrigatórios do prompt §27 cobertos: 8 (IGP-M, `correction.test.ts`), 9 (IPCA, `correction.test.ts`), 10 (taxa zero, `correction.test.ts`), 11 (CDI composto, `investment.test.ts`), 12 (aporte taxa zero, `investment.test.ts`), 13 (aporte taxa positiva, `investment.test.ts`), 14 (limite pelo prazo, `schedule.test.ts`), 19 (snapshot, `simulations.test.ts`), 20 (produto editado não altera simulação, `simulations.test.ts`).
+
+### Fases 5–7
 
 Ainda não iniciadas. Serão detalhadas task a task neste mesmo formato à medida que cada fase for planejada e executada.

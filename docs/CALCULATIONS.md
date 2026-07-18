@@ -124,8 +124,41 @@ Total aportado em 12 meses = `3.220,00 × 12 = 38.640,00`; rendimento ≈ `1.727
 
 ## 5. Funções de domínio mínimas (spec, seção 5)
 
-A implementar em `src/domain` conforme as fases acima consomem cada uma:
-
-`getEligibleProducts`, `calculateMonthlySlack`, `calculateIncomeCommitment`, `rankConsortiumProducts` (Fase 3); `calculateCorrectedCredit`, `calculateCorrectedInstallment`, `calculateCorrectedPaymentSchedule`, `calculateTotalProjectedPayments`, `calculateCompoundFutureValue`, `calculateMonthlyContributionFutureValue`, `compareConsortiumAndInvestments` (Fase 4).
+`getEligibleProducts`, `calculateMonthlySlack`, `calculateIncomeCommitment`, `rankConsortiumProducts` (Fase 3 ✅); `calculateCorrectedCredit`, `calculateCorrectedInstallment`, `calculateCorrectedPaymentSchedule`, `calculateTotalProjectedPayments`, `calculateCompoundFutureValue`, `calculateMonthlyContributionFutureValue`, `compareConsortiumAndInvestments` (Fase 4 ✅).
 
 Todas usam `decimal.js` internamente; nenhuma opera sobre `number` bruto para valores monetários ou percentuais.
+
+## 6. Fórmulas implementadas na Fase 4 (`src/domain/financial-calculations`)
+
+Taxas trafegam em **pontos percentuais em string** ("6.5" = 6,5% a.a.), convertidas para fração internamente (`÷100`). Todo cálculo com `decimal.js`, arredondamento half-up.
+
+### Correção (`correction.ts`, prompt §14)
+```
+fator_ano             = (1 + taxa_anual)^ano
+carta_corrigida_ano   = carta_base × (1 + taxa_anual)^ano
+parcela_corrigida_ano = parcela_base × (1 + taxa_anual)^ano
+ano_do_mes            = floor((mes − 1) / 12)
+parcela_do_mes        = parcela_base × (1 + taxa_anual)^ano_do_mes
+```
+Exemplos verificados (testes): carta 600.000 × IGP-M 6,5% no ano 8 = **992.997,40**; parcela 1.902 × IPCA 4,5% no ano 3 = **2.170,50**; taxa 0 mantém o valor.
+
+### Cronograma e total (`schedule.ts`, prompt §14)
+`total_pago` = **soma das parcelas corrigidas mês a mês** do 1 até o mês selecionado (nunca última parcela × prazo). `calculateCorrectedPaymentSchedule` limita ao prazo do produto (caso 14). `buildYearlySeries` gera 1 ponto por ano contratual (240 meses → 20 pontos, anos 0–19).
+
+### Investimentos (`investment.ts`, prompt §16/§17)
+```
+taxa_mensal   = (1 + taxa_anual)^(1/12) − 1
+FV aporte     = aporte × [ ((1 + taxa_mensal)^n − 1) ÷ taxa_mensal ]   (taxa 0 → aporte × n)
+FV capital    = inicial × (1 + taxa_anual)^anos
+cdi_efetivo   = taxa_cdi_anual × (percentual_cdi ÷ 100)
+```
+Exemplos: aporte 1.000 a 10,5% a.a. por 12 meses = **12.567,09**; capital 10.000 a 10,5% por 2 anos = **12.210,25**; 110% de CDI 10,5% = **11,55%**.
+
+### Comparação e CDI (`comparison.ts`, `cdi.ts`)
+`compareConsortiumAndInvestments` — Modo A (aporte = parcela) e Modo B (capital = carta); a curva do consórcio corrige por **ano inteiro** (`floor`). `cdiCompoundProjection` monta a projeção completa do `CdiCompoundSlider` (montante, rendimento, série anual, desconto opcional de IR/taxa, diferença vs carta corrigida).
+
+### Cenários (`assumptions.ts`, prompt §15)
+`resolveScenarioRate`: conservador = base × 0,7; base; agressivo = base × 1,3; personalizado = taxa informada (papel autorizado validado na action). Ex.: base 6,5 → conservador 4,55 / agressivo 8,45.
+
+### Simulação imutável (`repositories/simulations.ts`, prompt §23/casos 19–20)
+`computeSimulation` é pura e opera sempre sobre o `product_snapshot`/`assumptions_snapshot` gravados — nunca sobre o produto atual. `cdiComparisonValue` (FV da parcela ao CDI até o mês selecionado) também é capturado no snapshot, garantindo que a simulação salva não muda quando o produto/taxa é editado depois.
