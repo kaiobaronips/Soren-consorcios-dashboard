@@ -10,3 +10,6 @@ test-results/
 *.tsbuildinfo
 supabase/.temp/
 next-env.d.ts
+
+# Cache de traineddata baixado pelo tesseract.js em runtime
+*.traineddata
