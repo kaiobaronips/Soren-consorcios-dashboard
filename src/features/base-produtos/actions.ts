@@ -1,11 +1,14 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/repositories/profiles";
 import { findDocumentByHash, insertDocument } from "@/repositories/documents";
 import { logAudit } from "@/repositories/audit";
 import { hasPdfMagicBytes, sanitizeFileName, sha256Hex } from "@/lib/pdf/upload-validation";
+import { processDocument } from "@/services/pdf-pipeline";
+import type { ColumnMapping } from "@/lib/pdf/parse-products";
 import { maxPdfSizeBytes } from "./schema";
 
 const BUCKET = "product-documents";
@@ -68,4 +71,59 @@ export async function uploadDocumentAction(
 
   revalidatePath("/base-produtos");
   return { documentId };
+}
+
+// Índice de coluna >= 0 por campo; sobrepõe a inferência do parser no reprocessamento.
+const columnMappingSchema = z
+  .object({
+    productName: z.number().int().min(0),
+    productCode: z.number().int().min(0),
+    creditAmount: z.number().int().min(0),
+    termMonths: z.number().int().min(0),
+    totalAdministrationFeePercent: z.number().int().min(0),
+    regularInstallmentAmount: z.number().int().min(0),
+    first12InstallmentAmount: z.number().int().min(0),
+  })
+  .partial();
+
+const processDocumentSchema = z.object({
+  documentId: z.string().uuid("Documento inválido"),
+  manualMapping: columnMappingSchema.optional(),
+});
+
+export type ProcessDocumentInput = z.infer<typeof processDocumentSchema>;
+
+export type ProcessDocumentState = {
+  error?: string;
+  productsFound?: number;
+  status?: "review_required" | "failed";
+};
+
+/**
+ * Dispara o pipeline de extração de um documento já enviado (Task 4). Staff apenas.
+ * NUNCA publica produtos: só gera a staging `extracted_products` para revisão humana.
+ */
+export async function processDocumentAction(input: ProcessDocumentInput): Promise<ProcessDocumentState> {
+  const profile = await getCurrentProfile();
+  if (profile.role === "consultant") return { error: "Sem permissão" };
+
+  const parsed = processDocumentSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Entrada inválida" };
+
+  const { documentId, manualMapping } = parsed.data;
+
+  try {
+    const result = await processDocument(documentId, manualMapping as ColumnMapping | undefined);
+    await logAudit({
+      action: "document.process",
+      entityType: "product_documents",
+      entityId: documentId,
+      newState: { productsFound: result.productsFound },
+    });
+    revalidatePath("/base-produtos");
+    return { productsFound: result.productsFound, status: result.status };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao processar o documento";
+    return { error: message };
+  }
 }
