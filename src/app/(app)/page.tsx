@@ -40,6 +40,7 @@ export default function HomePage() {
         </p>
         <Button
           size="lg"
+          nativeButton={false}
           render={<Link href="/atendimento">Iniciar novo atendimento</Link>}
         />
       </section>
