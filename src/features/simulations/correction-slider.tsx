@@ -23,7 +23,7 @@ export function CorrectionSlider({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label>Momento no plano</Label>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground tabular-nums">
           Mês {month} de {termMonths} · {currentYear} ano(s) de {totalYears}
         </p>
       </div>

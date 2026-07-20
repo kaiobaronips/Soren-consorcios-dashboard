@@ -1,5 +1,6 @@
 import { listProducts, type ProductFilters } from "@/repositories/products";
 import { getCurrentProfile } from "@/repositories/profiles";
+import { PageHeader } from "@/components/page-header";
 import { ProductsFilters } from "@/features/products/products-filters";
 import { ProductsTable } from "@/features/products/products-table";
 import { ProductForm } from "@/features/products/product-form";
@@ -21,14 +22,12 @@ export default async function ProdutosPage({
   const [products, profile] = await Promise.all([listProducts(filters), getCurrentProfile()]);
   const canManage = profile.role !== "consultant";
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Produtos</h1>
-          <p className="text-muted-foreground">{products.length} produto(s) no catálogo</p>
-        </div>
-        {canManage && <ProductForm />}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Produtos"
+        description={`${products.length} produto(s) no catálogo`}
+        action={canManage ? <ProductForm /> : undefined}
+      />
       <ProductsFilters current={params} />
       <ProductsTable products={products} canManage={canManage} />
     </div>

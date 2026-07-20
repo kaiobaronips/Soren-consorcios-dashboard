@@ -20,7 +20,7 @@ export function SimulationsHistory({ simulations }: { simulations: SavedSimulati
     return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma simulação salva ainda.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="overflow-x-auto rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -33,9 +33,9 @@ export function SimulationsHistory({ simulations }: { simulations: SavedSimulati
         </TableHeader>
         <TableBody>
           {simulations.map((s) => (
-            <TableRow key={s.id}>
+            <TableRow key={s.id} className="transition-colors hover:bg-muted/50">
               <TableCell className="font-medium">{productNameOf(s)}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right tabular-nums">
                 {s.projectedCreditAmount ? formatCurrency(s.projectedCreditAmount) : "—"}
               </TableCell>
               <TableCell>{s.selectedYear !== null ? `Ano ${s.selectedYear}` : "—"}</TableCell>

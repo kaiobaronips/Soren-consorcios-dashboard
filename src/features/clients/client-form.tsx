@@ -39,7 +39,11 @@ export function ClientForm() {
               <Input id={f.name} name={f.name} placeholder={f.placeholder} required={f.required} />
             </div>
           ))}
-          {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+          {state?.error && (
+            <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+              {state.error}
+            </p>
+          )}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Salvando..." : "Salvar cliente"}
           </Button>

@@ -21,8 +21,8 @@ const INDEX_LABEL: Record<SimulationAssumptions["indexCode"], string> = {
  */
 export function AssumptionsBlock({ assumptions }: { assumptions: SimulationAssumptions }) {
   return (
-    <div className="space-y-2 rounded-md border p-3 text-sm">
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
+    <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-sm">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 [&_dd]:tabular-nums">
         <dt className="text-muted-foreground">Índice</dt>
         <dd>{INDEX_LABEL[assumptions.indexCode]}</dd>
         <dt className="text-muted-foreground">Taxa anual</dt>
@@ -36,7 +36,7 @@ export function AssumptionsBlock({ assumptions }: { assumptions: SimulationAssum
         <dt className="text-muted-foreground">Tipo</dt>
         <dd>{RATE_TYPE_LABEL[assumptions.rateType]}</dd>
       </dl>
-      <p className="rounded-md border border-yellow-600/30 bg-yellow-500/10 px-2 py-1.5 text-xs text-yellow-700 dark:text-yellow-400">
+      <p className="rounded-md border border-warning/40 bg-warning-soft px-2 py-1.5 text-xs font-medium text-warning-foreground">
         Estimativa — não é garantia de resultado.
       </p>
     </div>

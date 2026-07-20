@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 const FIELDS: { name: string; label: string; placeholder?: string }[] = [
   { name: "productName", label: "Nome do produto", placeholder: "Imóvel XY 300 – 200m" },
@@ -44,23 +45,27 @@ export function ProductForm() {
           ))}
           <div className="space-y-1">
             <Label htmlFor="category">Categoria</Label>
-            <select id="category" name="category" className="w-full rounded-md border bg-transparent px-3 py-2 text-sm">
+            <NativeSelect id="category" name="category">
               <option value="property">Imóvel</option>
               <option value="vehicle">Veículo</option>
               <option value="other">Outros</option>
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1">
             <Label htmlFor="correctionIndex">Índice de correção</Label>
-            <select id="correctionIndex" name="correctionIndex" className="w-full rounded-md border bg-transparent px-3 py-2 text-sm">
+            <NativeSelect id="correctionIndex" name="correctionIndex">
               <option value="IGPM">IGP-M</option>
               <option value="IPCA">IPCA</option>
               <option value="INCC">INCC</option>
               <option value="NONE">Nenhum</option>
               <option value="CUSTOM">Personalizado</option>
-            </select>
+            </NativeSelect>
           </div>
-          {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+          {state?.error && (
+            <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+              {state.error}
+            </p>
+          )}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Salvando..." : "Salvar produto"}
           </Button>

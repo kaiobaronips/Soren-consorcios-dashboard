@@ -24,14 +24,14 @@ export default async function ClientDetailPage({
   ]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <h1 className="flex items-center gap-2 font-heading text-3xl font-semibold tracking-tight">
             {client.name}
             {client.status !== "active" && <Badge variant="secondary">{client.status}</Badge>}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Consultor: {consultantNames[client.consultantId] ?? "—"} · Cadastro em {formatDate(client.createdAt)}
           </p>
         </div>
@@ -59,28 +59,23 @@ export default async function ClientDetailPage({
           <CardHeader>
             <CardTitle>Resumo financeiro</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 text-sm">
+          <CardContent className="space-y-1.5 text-sm">
             <p>
               <span className="text-muted-foreground">Renda mensal:</span>{" "}
-              {client.monthlyIncome ? formatCurrency(client.monthlyIncome) : "—"}
+              <span className="tabular-nums">{client.monthlyIncome ? formatCurrency(client.monthlyIncome) : "—"}</span>
             </p>
             <p>
               <span className="text-muted-foreground">Disponível mensal:</span>{" "}
-              {client.monthlyAvailableAmount ? formatCurrency(client.monthlyAvailableAmount) : "—"}
+              <span className="tabular-nums">{client.monthlyAvailableAmount ? formatCurrency(client.monthlyAvailableAmount) : "—"}</span>
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-medium">Histórico de simulações</h2>
+      <div className="space-y-3">
+        <h2 className="font-heading text-xl font-semibold">Histórico de simulações</h2>
         <SimulationsHistory simulations={simulations} />
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        CRM completo (timeline de interações, documentos, tarefas) chega na Fase 5. Esta é a versão mínima da
-        página do cliente.
-      </p>
     </div>
   );
 }

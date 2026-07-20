@@ -19,7 +19,7 @@ export function ProductsTable({ products, canManage }: { products: Product[]; ca
     return <p className="py-8 text-center text-muted-foreground">Nenhum produto encontrado. Rode a importação: <code>pnpm import:xlsx references/consorcio.xlsx</code></p>;
   }
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="overflow-x-auto rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -36,19 +36,21 @@ export function ProductsTable({ products, canManage }: { products: Product[]; ca
         </TableHeader>
         <TableBody>
           {products.map((p) => (
-            <TableRow key={p.id}>
+            <TableRow key={p.id} className="transition-colors hover:bg-muted/50">
               <TableCell>
                 <span className="font-medium">{p.productName}</span>
                 {p.isDemo && <Badge variant="outline" className="ml-2">demo</Badge>}
-                <div className="text-xs text-muted-foreground">{p.productCode} · {p.administratorName}</div>
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-mono">{p.productCode}</span> · {p.administratorName}
+                </div>
               </TableCell>
               <TableCell>{CATEGORY_LABEL[p.category]}</TableCell>
-              <TableCell className="text-right font-medium">{formatCurrency(p.creditAmount)}</TableCell>
-              <TableCell className="text-right">{p.termMonths}m</TableCell>
-              <TableCell className="text-right">{formatPercent(p.totalAdministrationFeePercent)}</TableCell>
-              <TableCell className="text-right">{p.first12InstallmentAmount ? formatCurrency(p.first12InstallmentAmount) : "—"}</TableCell>
-              <TableCell className="text-right">{formatCurrency(p.regularInstallmentAmount)}</TableCell>
-              <TableCell><Badge variant={p.status === "active" ? "default" : "secondary"}>{STATUS_LABEL[p.status]}</Badge></TableCell>
+              <TableCell className="text-right font-medium tabular-nums">{formatCurrency(p.creditAmount)}</TableCell>
+              <TableCell className="text-right tabular-nums">{p.termMonths}m</TableCell>
+              <TableCell className="text-right tabular-nums">{formatPercent(p.totalAdministrationFeePercent)}</TableCell>
+              <TableCell className="text-right tabular-nums">{p.first12InstallmentAmount ? formatCurrency(p.first12InstallmentAmount) : "—"}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(p.regularInstallmentAmount)}</TableCell>
+              <TableCell><Badge variant={p.status === "active" ? "success" : "secondary"}>{STATUS_LABEL[p.status]}</Badge></TableCell>
               {canManage && (
                 <TableCell>
                   <form action={toggleProductStatus}>

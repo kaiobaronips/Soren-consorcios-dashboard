@@ -11,6 +11,14 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import {
+  chartAxisTick,
+  chartGridStroke,
+  chartLineAnimation,
+  chartSeries,
+  chartTooltipContentStyle,
+  chartTooltipLabelStyle,
+} from "@/components/ui/chart-theme";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -182,28 +190,28 @@ export function CdiCompoundSlider({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
         <div>
-          <p className="text-xs text-muted-foreground">Total aportado</p>
-          <p className="font-medium">{formatCurrency(totalContributed)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total aportado</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(totalContributed)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Rendimento bruto</p>
-          <p className="font-medium">{formatCurrency(earnings)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Rendimento bruto</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(earnings)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Montante {discountTaxes ? "líquido (estimado)" : "bruto"} — estimativa {discountTaxes ? "líquida" : "bruta"}
           </p>
-          <p className="font-medium">{formatCurrency(displayAmount)}</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(displayAmount)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Carta corrigida no período</p>
-          <p className="font-medium">{formatCurrency(correctedCredit)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Carta corrigida no período</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(correctedCredit)}</p>
         </div>
         <div className="col-span-2">
-          <p className="text-xs text-muted-foreground">Diferença (montante − carta corrigida)</p>
-          <p className={`font-medium ${isNegativeDifference ? "text-destructive" : "text-green-700 dark:text-green-400"}`}>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Diferença (montante − carta corrigida)</p>
+          <p className={`font-semibold tabular-nums ${isNegativeDifference ? "text-destructive" : "text-success"}`}>
             {formatCurrency(differenceVsCredit)}
           </p>
         </div>
@@ -213,12 +221,16 @@ export function CdiCompoundSlider({
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="ano" fontSize={11} />
-              <YAxis fontSize={11} width={70} tickFormatter={(v: number) => formatCurrency(v)} />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Line type="monotone" dataKey="montante" name={discountTaxes ? "Montante líquido" : "Montante bruto"} stroke="var(--primary)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+              <XAxis dataKey="ano" tick={chartAxisTick} tickLine={false} axisLine={false} />
+              <YAxis width={70} tick={chartAxisTick} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} />
+              <Tooltip
+                formatter={(value) => formatCurrency(Number(value))}
+                contentStyle={chartTooltipContentStyle}
+                labelStyle={chartTooltipLabelStyle}
+              />
+              <Line type="monotone" dataKey="montante" name={discountTaxes ? "Montante líquido" : "Montante bruto"} stroke={chartSeries.primary} strokeWidth={2} dot={false} {...chartLineAnimation} />
+              <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke={chartSeries.comparison} strokeWidth={2} dot={false} {...chartLineAnimation} />
             </LineChart>
           </ResponsiveContainer>
         </div>

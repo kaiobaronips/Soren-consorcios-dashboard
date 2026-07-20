@@ -17,7 +17,7 @@ export function ClientsTable({
     return <p className="py-8 text-center text-muted-foreground">Nenhum cliente cadastrado ainda.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="overflow-x-auto rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -31,9 +31,9 @@ export function ClientsTable({
         </TableHeader>
         <TableBody>
           {clients.map((c) => (
-            <TableRow key={c.id}>
+            <TableRow key={c.id} className="transition-colors hover:bg-muted/50">
               <TableCell>
-                <Link href={`/clientes/${c.id}`} className="font-medium hover:underline">
+                <Link href={`/clientes/${c.id}`} className="font-medium transition-colors hover:text-primary hover:underline">
                   {c.name}
                 </Link>
                 {c.status !== "active" && <Badge variant="secondary" className="ml-2">{c.status}</Badge>}
@@ -42,10 +42,10 @@ export function ClientsTable({
                 <div>{c.email ?? "—"}</div>
                 <div className="text-xs text-muted-foreground">{c.phone ?? "—"}</div>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right tabular-nums">
                 {c.monthlyIncome ? formatCurrency(c.monthlyIncome) : "—"}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right tabular-nums">
                 {c.monthlyAvailableAmount ? formatCurrency(c.monthlyAvailableAmount) : "—"}
               </TableCell>
               <TableCell>{consultantNames[c.consultantId] ?? "—"}</TableCell>

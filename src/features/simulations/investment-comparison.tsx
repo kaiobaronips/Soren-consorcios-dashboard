@@ -11,6 +11,14 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import {
+  chartAxisTick,
+  chartGridStroke,
+  chartLineAnimation,
+  chartSeries,
+  chartTooltipContentStyle,
+  chartTooltipLabelStyle,
+} from "@/components/ui/chart-theme";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -169,36 +177,36 @@ export function InvestmentComparison({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
         <div>
-          <p className="text-xs text-muted-foreground">Total aportado</p>
-          <p className="font-medium">{formatCurrency(result.totalContributed)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total aportado</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(result.totalContributed)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Rendimentos</p>
-          <p className="font-medium">{formatCurrency(result.investmentEarnings)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Rendimentos</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(result.investmentEarnings)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Saldo bruto — estimativa bruta</p>
-          <p className="font-medium">{formatCurrency(result.investmentGross)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Saldo bruto — estimativa bruta</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(result.investmentGross)}</p>
         </div>
         {netBalance && (
           <div>
-            <p className="text-xs text-muted-foreground">Saldo líquido (estimado)</p>
-            <p className="font-medium">{formatCurrency(netBalance)}</p>
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Saldo líquido (estimado)</p>
+            <p className="font-semibold tabular-nums">{formatCurrency(netBalance)}</p>
           </div>
         )}
         <div>
-          <p className="text-xs text-muted-foreground">Taxa do investimento</p>
-          <p className="font-medium">{formatPercent(investmentAnnualRatePercent)} a.a.</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Taxa do investimento</p>
+          <p className="font-semibold tabular-nums">{formatPercent(investmentAnnualRatePercent)} a.a.</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Período</p>
-          <p className="font-medium">{years} ano(s) ({months} meses)</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Período</p>
+          <p className="font-semibold tabular-nums">{years} ano(s) ({months} meses)</p>
         </div>
         <div className="col-span-2">
-          <p className="text-xs text-muted-foreground">Diferença vs. carta corrigida (saldo bruto − carta)</p>
-          <p className="font-medium">{formatCurrency(result.differenceVsCredit)}</p>
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Diferença vs. carta corrigida (saldo bruto − carta)</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(result.differenceVsCredit)}</p>
         </div>
       </div>
 
@@ -206,12 +214,16 @@ export function InvestmentComparison({
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="ano" fontSize={11} />
-              <YAxis fontSize={11} width={70} tickFormatter={(v: number) => formatCurrency(v)} />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Line type="monotone" dataKey="investimento" name="Saldo do investimento" stroke="var(--primary)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+              <XAxis dataKey="ano" tick={chartAxisTick} tickLine={false} axisLine={false} />
+              <YAxis width={70} tick={chartAxisTick} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} />
+              <Tooltip
+                formatter={(value) => formatCurrency(Number(value))}
+                contentStyle={chartTooltipContentStyle}
+                labelStyle={chartTooltipLabelStyle}
+              />
+              <Line type="monotone" dataKey="investimento" name="Saldo do investimento" stroke={chartSeries.primary} strokeWidth={2} dot={false} {...chartLineAnimation} />
+              <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke={chartSeries.comparison} strokeWidth={2} dot={false} {...chartLineAnimation} />
             </LineChart>
           </ResponsiveContainer>
         </div>
