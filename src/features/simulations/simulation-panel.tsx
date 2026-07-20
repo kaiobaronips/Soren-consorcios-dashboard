@@ -12,6 +12,14 @@ import {
   YAxis,
 } from "recharts";
 import {
+  chartAxisTick,
+  chartGridStroke,
+  chartLineAnimation,
+  chartSeries,
+  chartTooltipContentStyle,
+  chartTooltipLabelStyle,
+} from "@/components/ui/chart-theme";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -223,30 +231,30 @@ export function SimulationPanel({
         <div className="space-y-4">
           <CorrectionSlider month={month} termMonths={product.termMonths} onChange={setMonth} />
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground">Carta nominal</p>
-              <p className="font-medium">{formatCurrency(product.creditAmount)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Carta nominal</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(product.creditAmount)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Carta corrigida</p>
-              <p className="font-medium">{formatCurrency(projectedCredit)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Carta corrigida</p>
+              <p className="font-heading text-lg font-semibold text-primary tabular-nums">{formatCurrency(projectedCredit)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Parcela nominal</p>
-              <p className="font-medium">{formatCurrency(product.regularInstallmentAmount)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Parcela nominal</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(product.regularInstallmentAmount)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Parcela no período</p>
-              <p className="font-medium">{formatCurrency(projectedInstallment)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Parcela no período</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(projectedInstallment)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total pago até o mês</p>
-              <p className="font-medium">{formatCurrency(projectedTotalPaid)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total pago até o mês</p>
+              <p className="font-semibold tabular-nums">{formatCurrency(projectedTotalPaid)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Correção acumulada</p>
-              <p className="font-medium">{formatPercent(accumulatedCorrectionPercent)}</p>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Correção acumulada</p>
+              <p className="font-semibold tabular-nums">{formatPercent(accumulatedCorrectionPercent)}</p>
             </div>
           </div>
 
@@ -254,12 +262,16 @@ export function SimulationPanel({
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="ano" fontSize={11} />
-                  <YAxis fontSize={11} width={70} tickFormatter={(v: number) => formatCurrency(v)} />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="parcela" name="Parcela corrigida" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                  <XAxis dataKey="ano" tick={chartAxisTick} tickLine={false} axisLine={false} />
+                  <YAxis width={70} tick={chartAxisTick} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={chartTooltipContentStyle}
+                    labelStyle={chartTooltipLabelStyle}
+                  />
+                  <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke={chartSeries.primary} strokeWidth={2} dot={false} {...chartLineAnimation} />
+                  <Line type="monotone" dataKey="parcela" name="Parcela corrigida" stroke={chartSeries.comparison} strokeWidth={2} dot={false} {...chartLineAnimation} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -295,8 +307,10 @@ export function SimulationPanel({
 
           <AssumptionsBlock assumptions={assumptions} />
 
-          <details className="space-y-3 rounded-md border p-3">
-            <summary className="cursor-pointer font-medium">Comparar com investimentos</summary>
+          <details className="group space-y-3 rounded-lg border bg-muted/40 px-3 py-2">
+            <summary className="cursor-pointer font-medium transition-colors select-none group-open:text-primary">
+              Comparar com investimentos
+            </summary>
             <div className="space-y-6 pt-2">
               <div>
                 <p className="mb-2 text-sm font-medium">Simulação CDI (juros compostos)</p>
@@ -336,9 +350,15 @@ export function SimulationPanel({
             <input type="hidden" name="monthlyIncome" value={monthlyIncome ?? ""} />
             <input type="hidden" name="cdiAnnualRatePercent" value={indexes.CDI?.annualRatePercent ?? ""} />
 
-            {saveState?.error && <p className="text-sm text-destructive">{saveState.error}</p>}
+            {saveState?.error && (
+              <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+                {saveState.error}
+              </p>
+            )}
             {saveState?.simulationId && (
-              <p className="text-sm text-green-700 dark:text-green-400">Simulação salva com sucesso.</p>
+              <p className="rounded-md bg-success-soft px-3 py-2 text-sm font-medium text-success">
+                Simulação salva com sucesso.
+              </p>
             )}
             <DialogFooter>
               <Button type="submit" disabled={savePending}>

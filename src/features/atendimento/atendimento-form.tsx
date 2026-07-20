@@ -6,6 +6,7 @@ import type { Client } from "@/repositories/clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { ProjectedRates } from "@/domain/financial-calculations";
 import type { FinancialIndex } from "@/repositories/indexes";
 import { atender } from "./actions";
@@ -76,8 +77,8 @@ export function AtendimentoForm({
 
   return (
     <div className="space-y-6">
-      <form action={action} className="space-y-4 rounded-md border p-4">
-        <div className="space-y-1">
+      <form action={action} className="space-y-5 rounded-xl border bg-card p-5 shadow-xs sm:p-6">
+        <div className="space-y-1.5">
           <Label htmlFor="clientName">Cliente</Label>
           <div className="relative">
             <Input
@@ -105,12 +106,12 @@ export function AtendimentoForm({
               </Button>
             )}
             {showDropdown && !selected && query.trim().length >= 2 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+              <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border bg-popover py-1 shadow-lg">
                 {visibleResults.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                    className="block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={() => selectClient(c)}
                   >
                     {c.name}
@@ -120,7 +121,7 @@ export function AtendimentoForm({
                 {query.trim().length >= 2 && (
                   <button
                     type="button"
-                    className="block w-full border-t px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+                    className="block w-full border-t px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setShowDropdown(false)}
                   >
                     Criar novo cliente “{query}”
@@ -133,7 +134,7 @@ export function AtendimentoForm({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="monthlyIncome">Renda mensal (opcional)</Label>
             <Input
               id="monthlyIncome"
@@ -143,7 +144,7 @@ export function AtendimentoForm({
               onChange={(e) => setIncome(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="monthlyAvailableAmount">Valor disponível mensal</Label>
             <Input
               id="monthlyAvailableAmount"
@@ -157,36 +158,38 @@ export function AtendimentoForm({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="desiredCategory">Categoria</Label>
-            <select
+            <NativeSelect
               id="desiredCategory"
               name="desiredCategory"
               defaultValue="all"
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="desiredTermMonths">Prazo desejado</Label>
-            <select
+            <NativeSelect
               id="desiredTermMonths"
               name="desiredTermMonths"
               defaultValue=""
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
             >
               {TERMS.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
 
-        {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
-        <Button type="submit" disabled={pending}>
+        {state?.error && (
+          <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+            {state.error}
+          </p>
+        )}
+        <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Calculando..." : "Consultar planos elegíveis"}
         </Button>
       </form>

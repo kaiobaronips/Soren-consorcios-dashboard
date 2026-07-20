@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { AtendimentoForm } from "@/features/atendimento/atendimento-form";
 import { getCurrentProfile } from "@/repositories/profiles";
 import { getLatestIndexes } from "@/repositories/indexes";
@@ -12,13 +13,11 @@ export default async function AtendimentoPage() {
   const canEditRate = profile.role === "admin" || profile.role === "manager";
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Novo atendimento</h1>
-        <p className="text-muted-foreground">
-          Informe o cliente e o valor disponível para ver os planos elegíveis, ranqueados por compatibilidade.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Novo atendimento"
+        description="Informe o cliente e o valor disponível para ver os planos elegíveis, ranqueados por compatibilidade."
+      />
       <AtendimentoForm
         indexes={indexes}
         projectedRates={settings.projectedAnnualRates}

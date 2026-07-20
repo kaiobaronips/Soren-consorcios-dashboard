@@ -117,21 +117,20 @@ export function ResultCards({
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item) => {
+          {filtered.map((item, index) => {
             const rankIndex = ranked.indexOf(item);
             const badges = highlightBadges(item.product.id, highlights);
             return (
-              <Card key={item.product.id}>
+              <Card
+                key={item.product.id}
+                className="animate-fade-up transition-shadow hover:shadow-md"
+                style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+              >
                 <CardHeader>
                   <div className="flex flex-wrap items-center gap-1">
                     {rankIndex === 0 && <Badge>Plano recomendado</Badge>}
                     <Badge
-                      variant={item.classification === "compatible" ? "default" : "secondary"}
-                      className={
-                        item.classification === "compatible"
-                          ? "bg-green-600 text-white [a]:hover:bg-green-600/80"
-                          : "bg-yellow-500 text-black [a]:hover:bg-yellow-500/80"
-                      }
+                      variant={item.classification === "compatible" ? "success" : "warning"}
                     >
                       {item.classification === "compatible" ? "Compatível" : "Atenção: 1ª–12ª acima do disponível"}
                     </Badge>
@@ -139,14 +138,16 @@ export function ResultCards({
                       <Badge key={b} variant="outline">{b}</Badge>
                     ))}
                   </div>
-                  <CardTitle>{item.product.productName}</CardTitle>
+                  <CardTitle className="pt-1">{item.product.productName}</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {item.product.administratorName} · {CATEGORY_LABEL[item.product.category]}
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="text-2xl font-semibold">{formatCurrency(item.product.creditAmount)}</p>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                <CardContent className="space-y-3">
+                  <p className="font-heading text-3xl font-semibold tabular-nums">
+                    {formatCurrency(item.product.creditAmount)}
+                  </p>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm [&_dd]:tabular-nums">
                     <dt className="text-muted-foreground">Prazo</dt>
                     <dd>{item.product.termMonths} meses</dd>
                     <dt className="text-muted-foreground">Parcela 1ª–12ª</dt>
@@ -170,17 +171,19 @@ export function ResultCards({
                       </>
                     )}
                   </dl>
-                  <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground">Por que este plano?</summary>
-                    <p className="mt-1 text-xs text-muted-foreground">{installmentLabel(basis)}</p>
-                    <ul className="mt-1 list-inside list-disc">
+                  <details className="group rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-medium text-muted-foreground transition-colors select-none group-open:text-foreground">
+                      Por que este plano?
+                    </summary>
+                    <p className="mt-2 text-xs text-muted-foreground">{installmentLabel(basis)}</p>
+                    <ul className="mt-1 list-inside list-disc space-y-0.5">
                       {item.reasons.map((r) => (
                         <li key={r.label}>
                           {r.label}: {r.points.toFixed(1)} pt(s)
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-1 text-xs font-medium">Pontuação total: {item.score.toFixed(1)}</p>
+                    <p className="mt-2 text-xs font-medium">Pontuação total: {item.score.toFixed(1)}</p>
                   </details>
                   <div className="flex justify-end pt-1">
                     <SimulationPanel
