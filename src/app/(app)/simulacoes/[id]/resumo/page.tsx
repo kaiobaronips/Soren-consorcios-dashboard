@@ -44,16 +44,16 @@ export default async function SimulationSummaryPage({
   const consultantName = consultantNames[simulation.consultantId] ?? "—";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 print:max-w-none">
+    <div className="mx-auto max-w-2xl space-y-8 print:max-w-none">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Resumo da simulação</h1>
-          <p className="text-muted-foreground">Soren Consórcios</p>
+        <div className="space-y-1">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight">Resumo da simulação</h1>
+          <p className="text-sm text-muted-foreground">Soren Consórcios</p>
         </div>
         <PrintButton />
       </div>
 
-      <section className="space-y-1 rounded-md border p-4 text-sm">
+      <section className="space-y-1.5 rounded-xl border bg-card p-4 text-sm">
         <p>
           <span className="text-muted-foreground">Cliente:</span> {client.name}
         </p>
@@ -65,10 +65,10 @@ export default async function SimulationSummaryPage({
         </p>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Produto simulado</h2>
+      <section className="space-y-2.5">
+        <h2 className="font-heading text-xl font-semibold">Produto simulado</h2>
         {product ? (
-          <div className="grid grid-cols-2 gap-3 rounded-md border p-4 text-sm">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-xl border bg-card p-4 text-sm">
             <Info label="Produto" value={product.productName} />
             <Info label="Carta nominal" value={formatCurrency(product.creditAmount)} />
             <Info label="Prazo" value={`${product.termMonths} meses`} />
@@ -84,9 +84,9 @@ export default async function SimulationSummaryPage({
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Projeção selecionada</h2>
-        <div className="grid grid-cols-2 gap-3 rounded-md border p-4 text-sm">
+      <section className="space-y-2.5">
+        <h2 className="font-heading text-xl font-semibold">Projeção selecionada</h2>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-xl border bg-card p-4 text-sm">
           <Info label="Ano selecionado" value={simulation.selectedYear !== null ? `Ano ${simulation.selectedYear}` : "—"} />
           <Info label="Carta base" value={formatCurrency(simulation.baseCreditAmount)} />
           <Info
@@ -105,10 +105,10 @@ export default async function SimulationSummaryPage({
         </div>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Premissas usadas</h2>
+      <section className="space-y-2.5">
+        <h2 className="font-heading text-xl font-semibold">Premissas usadas</h2>
         {assumptions ? (
-          <div className="grid grid-cols-2 gap-3 rounded-md border p-4 text-sm">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-xl border bg-card p-4 text-sm">
             <Info label="Cenário" value={SCENARIO_LABEL[assumptions.scenario] ?? assumptions.scenario} />
             <Info label="Índice" value={assumptions.indexCode} />
             <Info label="Taxa anual" value={formatPercent(assumptions.annualRatePercent)} />
@@ -122,9 +122,9 @@ export default async function SimulationSummaryPage({
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Comparação com CDI</h2>
-        <div className="rounded-md border p-4 text-sm">
+      <section className="space-y-2.5">
+        <h2 className="font-heading text-xl font-semibold">Comparação com CDI</h2>
+        <div className="rounded-xl border bg-card p-4 text-sm">
           {simulation.cdiComparisonValue ? (
             <Info label="Valor comparado ao CDI" value={formatCurrency(simulation.cdiComparisonValue)} />
           ) : (
@@ -135,7 +135,7 @@ export default async function SimulationSummaryPage({
         </div>
       </section>
 
-      <section className="space-y-1 rounded-md border border-dashed p-4 text-xs text-muted-foreground">
+      <section className="space-y-1 rounded-xl border border-dashed p-4 text-xs text-muted-foreground">
         <p className="font-medium text-foreground">Avisos legais</p>
         <p>
           Os valores apresentados são estimativas calculadas com base em premissas de correção e cenários
@@ -158,8 +158,8 @@ export default async function SimulationSummaryPage({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-medium">{value}</p>
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className="font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

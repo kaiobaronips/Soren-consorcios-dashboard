@@ -1,8 +1,25 @@
+import { Settings2 } from "lucide-react";
+
+import { PageHeader } from "@/components/page-header";
+
 export default function ConfiguracoesPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Configurações</h1>
-      <p className="mt-2 text-muted-foreground">Disponível na Fase 2/4.</p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Configurações"
+        description="Taxas de referência e regra de elegibilidade da organização."
+      />
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-center">
+        <div className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Settings2 aria-hidden className="size-5" />
+        </div>
+        <p className="font-medium">Em breve</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          A edição das configurações da organização será liberada em uma próxima
+          versão. Hoje os valores vigentes já são aplicados automaticamente no
+          atendimento.
+        </p>
+      </div>
     </div>
   );
 }

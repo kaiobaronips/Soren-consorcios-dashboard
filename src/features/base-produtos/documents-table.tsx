@@ -10,11 +10,11 @@ import { formatDate } from "@/lib/format";
 import { processDocumentAction } from "./actions";
 import type { DocumentStatus, ProductDocument } from "@/repositories/documents";
 
-const STATUS: Record<DocumentStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+const STATUS: Record<DocumentStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" }> = {
   uploaded: { label: "Enviado", variant: "secondary" },
   processing: { label: "Processando", variant: "outline" },
   review_required: { label: "Revisão pendente", variant: "default" },
-  completed: { label: "Concluído", variant: "outline" },
+  completed: { label: "Concluído", variant: "success" },
   failed: { label: "Falha", variant: "destructive" },
 };
 
@@ -41,8 +41,12 @@ export function DocumentsTable({ documents }: { documents: ProductDocument[] }) 
 
   return (
     <div className="space-y-2">
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <div className="overflow-x-auto rounded-md border">
+      {error && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -58,7 +62,7 @@ export function DocumentsTable({ documents }: { documents: ProductDocument[] }) 
               const canProcess = doc.status === "uploaded" || doc.status === "failed";
               const canReview = doc.status === "review_required" || doc.status === "completed";
               return (
-                <TableRow key={doc.id}>
+                <TableRow key={doc.id} className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">{doc.fileName}</TableCell>
                   <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(doc.createdAt)}</TableCell>

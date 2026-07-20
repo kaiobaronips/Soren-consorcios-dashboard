@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/repositories/profiles";
 import { listDocuments } from "@/repositories/documents";
+import { PageHeader } from "@/components/page-header";
 import { UploadDropzone } from "@/features/base-produtos/upload-dropzone";
 import { DocumentsTable } from "@/features/base-produtos/documents-table";
 
@@ -13,12 +14,10 @@ export default async function BaseProdutosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Base de Produtos</h1>
-        <p className="text-muted-foreground">
-          Envie PDFs de tabelas, processe a extração e revise antes de publicar no catálogo.
-        </p>
-      </div>
+      <PageHeader
+        title="Base de Produtos"
+        description="Envie PDFs de tabelas, processe a extração e revise antes de publicar no catálogo."
+      />
       <UploadDropzone />
       <DocumentsTable documents={documents} />
     </div>

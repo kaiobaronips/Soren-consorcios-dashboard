@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, CheckCircle2, FileUp, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadDocumentAction } from "./actions";
 
@@ -47,10 +48,13 @@ export function UploadDropzone() {
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-          dragging ? "border-primary bg-accent" : "border-muted-foreground/25"
+        className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
+          dragging ? "border-primary bg-accent" : "border-muted-foreground/25 hover:border-muted-foreground/40"
         }`}
       >
+        <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <FileUp aria-hidden className="size-5" />
+        </div>
         <p className="text-sm text-muted-foreground">
           Arraste PDFs de tabelas de produtos aqui, ou
         </p>
@@ -72,20 +76,16 @@ export function UploadDropzone() {
       </div>
 
       {results.length > 0 && (
-        <ul className="space-y-1 text-sm">
+        <ul className="space-y-1.5 text-sm">
           {results.map((r, i) => (
             <li key={`${r.fileName}-${i}`} className="flex items-center gap-2">
-              <span
-                className={
-                  r.status === "ok"
-                    ? "text-green-600 dark:text-green-500"
-                    : r.status === "duplicate"
-                      ? "text-amber-600 dark:text-amber-500"
-                      : "text-destructive"
-                }
-              >
-                {r.status === "ok" ? "✓" : r.status === "duplicate" ? "⚠" : "✕"}
-              </span>
+              {r.status === "ok" ? (
+                <CheckCircle2 aria-hidden className="size-4 shrink-0 text-success" />
+              ) : r.status === "duplicate" ? (
+                <AlertTriangle aria-hidden className="size-4 shrink-0 text-warning" />
+              ) : (
+                <XCircle aria-hidden className="size-4 shrink-0 text-destructive" />
+              )}
               <span className="truncate font-medium">{r.fileName}</span>
               <span className="text-muted-foreground">— {r.message}</span>
             </li>

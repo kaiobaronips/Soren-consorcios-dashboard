@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { ExtractionReviewStatus } from "@/repositories/extracted-products";
 import type { ExtractedFieldKey, ExtractedProductRecord } from "@/repositories/extracted-products";
 import type { ProductDocument } from "@/repositories/documents";
@@ -40,9 +41,9 @@ const STATUS_LABEL: Record<ExtractionReviewStatus, string> = {
   rejected: "Rejeitado",
   published: "Publicado",
 };
-const STATUS_VARIANT: Record<ExtractionReviewStatus, "default" | "secondary" | "outline" | "destructive"> = {
+const STATUS_VARIANT: Record<ExtractionReviewStatus, "default" | "secondary" | "outline" | "destructive" | "success"> = {
   pending_review: "secondary",
-  approved: "default",
+  approved: "success",
   rejected: "destructive",
   published: "outline",
 };
@@ -61,9 +62,9 @@ const CORRECTIONS: { value: CorrectionIndex; label: string }[] = [
 ];
 
 function confidenceBadge(confidence: number) {
-  if (confidence >= 90) return { variant: "outline" as const, label: `${confidence}%`, tone: "text-green-600 dark:text-green-500" };
-  if (confidence >= 50) return { variant: "outline" as const, label: `${confidence}%`, tone: "text-amber-600 dark:text-amber-500" };
-  return { variant: "outline" as const, label: `${confidence}%`, tone: "text-destructive" };
+  if (confidence >= 90) return { label: `${confidence}%`, tone: "text-success" };
+  if (confidence >= 50) return { label: `${confidence}%`, tone: "text-warning" };
+  return { label: `${confidence}%`, tone: "text-destructive" };
 }
 
 /** Editor de um campo: Input com badge de confiança e destaque de PENDENTE (value null). */
@@ -188,15 +189,14 @@ function ProductCard({
         ))}
         <div className="space-y-1">
           <Label htmlFor={`${record.id}-category`} className="text-xs">Categoria</Label>
-          <select
+          <NativeSelect
             id={`${record.id}-category`}
             value={category}
             disabled={published || pending}
             onChange={(e) => onCategory(e.target.value as Category)}
-            className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
           >
             {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
+          </NativeSelect>
         </div>
       </div>
 
@@ -223,7 +223,11 @@ function ProductCard({
           </Button>
         </div>
       )}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -294,7 +298,7 @@ export function ReviewPanel({
           <h2 className="text-sm font-medium">Documento de origem</h2>
           <a href={signedUrl} target="_blank" rel="noreferrer" className="text-xs underline">Abrir em nova aba</a>
         </div>
-        <iframe src={signedUrl} title={document.fileName} className="h-[75vh] w-full rounded-md border" />
+        <iframe src={signedUrl} title={document.fileName} className="h-[75vh] w-full rounded-xl border bg-muted/30" />
       </div>
 
       {/* Direita: produtos extraídos + controles de publicação */}
@@ -308,21 +312,28 @@ export function ReviewPanel({
             </div>
             <div className="space-y-1">
               <Label htmlFor="correction" className="text-xs">Índice de correção</Label>
-              <select
+              <NativeSelect
                 id="correction"
                 value={correctionIndex}
                 onChange={(e) => setCorrectionIndex(e.target.value as CorrectionIndex)}
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
               >
                 {CORRECTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              </NativeSelect>
             </div>
           </div>
           <Button size="sm" disabled={pending || approvedIds.length === 0} onClick={publishApproved}>
             Publicar aprovados ({approvedIds.length})
           </Button>
-          {bulkError && <p className="text-sm text-destructive">{bulkError}</p>}
-          {bulkMsg && <p className="text-sm text-muted-foreground">{bulkMsg}</p>}
+          {bulkError && (
+            <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
+              {bulkError}
+            </p>
+          )}
+          {bulkMsg && (
+            <p className="rounded-md bg-success-soft px-3 py-2 text-sm text-success">
+              {bulkMsg}
+            </p>
+          )}
         </div>
 
         <details className="rounded-lg border p-4">
