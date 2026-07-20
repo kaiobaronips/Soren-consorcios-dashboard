@@ -6,6 +6,12 @@ export default defineConfig({
   workers: 1,
   retries: 1,
   reporter: "html",
+  // Aquece as rotas do dev server (Next compila sob demanda na 1ª requisição) antes
+  // dos testes, para o cold start não estourar o timeout do primeiro teste.
+  globalSetup: "./e2e/global-setup.ts",
+  // Timeout de asserção mais folgado: o dev server pode compilar uma rota nova em
+  // alguns segundos na primeira visita.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
