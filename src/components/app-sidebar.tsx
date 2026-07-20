@@ -16,7 +16,11 @@ const NAV = [
 ];
 
 export function AppSidebar({ profile }: { profile: Profile }) {
-  const items = profile.role === "consultant" ? NAV : [...NAV, { href: "/configuracoes", label: "Configurações" }];
+  // Staff (admin/manager) veem Base de Produtos e Configurações; consultor não.
+  const items =
+    profile.role === "consultant"
+      ? NAV
+      : [...NAV, { href: "/base-produtos", label: "Base de Produtos" }, { href: "/configuracoes", label: "Configurações" }];
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-3 font-semibold">Soren Consórcios</SidebarHeader>

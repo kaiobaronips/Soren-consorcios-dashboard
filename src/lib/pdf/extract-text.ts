@@ -1,4 +1,5 @@
 import path from "node:path";
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import type { PageText } from "./parse-products";
 
@@ -172,6 +173,19 @@ export async function extractPdfText(
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const log: string[] = [];
   const pages: ExtractedPage[] = [];
+
+  // Sob o bundling do Next (Turbopack), o "fake worker" do pdfjs não resolve o
+  // chunk pdf.worker.mjs (import.meta.url aponta para .next/...). Rodamos sem
+  // worker (main thread), que é suportado no build legacy em Node.
+  try {
+    const require = createRequire(process.cwd() + "/");
+    const workerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+  } catch {
+    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(
+      path.join(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"),
+    ).href;
+  }
 
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(buffer),

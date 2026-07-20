@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/repositories/profiles";
 import type { ExtractedProduct } from "@/lib/pdf/parse-products";
@@ -16,17 +17,18 @@ type FieldColumns = {
   rawColumn: string;
 };
 
-/** Mapa campo(ExtractedProduct) -> trio de colunas na tabela. */
-const FIELD_COLUMNS: Record<
+/** Campos extraídos de um produto (os 7 editáveis na revisão). */
+export type ExtractedFieldKey =
   | "productName"
   | "productCode"
   | "creditAmount"
   | "termMonths"
   | "totalAdministrationFeePercent"
   | "regularInstallmentAmount"
-  | "first12InstallmentAmount",
-  FieldColumns
-> = {
+  | "first12InstallmentAmount";
+
+/** Mapa campo(ExtractedProduct) -> trio de colunas na tabela. */
+const FIELD_COLUMNS: Record<ExtractedFieldKey, FieldColumns> = {
   productName: {
     valueColumn: "product_name_value",
     confidenceColumn: "product_name_confidence",
@@ -110,6 +112,149 @@ export async function replacePendingExtractedProducts(
   if (insertError) throw insertError;
 
   return rows.length;
+}
+
+/** Um campo do candidato como chega para a revisão (valor normalizado + confiança + texto cru). */
+export type ReviewField = { value: string | null; confidence: number; raw: string | null };
+
+/** Um produto candidato, montado para a UI de revisão humana. */
+export type ExtractedProductRecord = {
+  id: string;
+  documentId: string;
+  page: number;
+  productName: ReviewField;
+  productCode: ReviewField;
+  creditAmount: ReviewField;
+  termMonths: ReviewField;
+  totalAdministrationFeePercent: ReviewField;
+  regularInstallmentAmount: ReviewField;
+  first12InstallmentAmount: ReviewField;
+  overallConfidence: number;
+  issues: string[];
+  reviewStatus: ExtractionReviewStatus;
+  publishedProductId: string | null;
+};
+
+// Casas decimais canônicas por campo (NUMERIC chega como number do PostgREST; perde zeros à direita).
+const FIELD_DECIMALS: Partial<Record<ExtractedFieldKey, number>> = {
+  creditAmount: 2,
+  regularInstallmentAmount: 2,
+  first12InstallmentAmount: 2,
+  totalAdministrationFeePercent: 3,
+};
+
+/** Normaliza o valor cru do banco para string canônica (money 2 casas, taxa 3, prazo inteiro). */
+function normalizeFieldValue(field: ExtractedFieldKey, raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const decimals = FIELD_DECIMALS[field];
+  if (decimals !== undefined) return new Decimal(raw as Decimal.Value).toFixed(decimals);
+  if (field === "termMonths") return String(raw);
+  return String(raw);
+}
+
+const SELECT_COLUMNS = [
+  "id",
+  "document_id",
+  "page",
+  "overall_confidence",
+  "issues",
+  "review_status",
+  "published_product_id",
+  ...Object.values(FIELD_COLUMNS).flatMap((c) => [c.valueColumn, c.confidenceColumn, c.rawColumn]),
+].join(", ");
+
+function toRecord(row: Record<string, unknown>): ExtractedProductRecord {
+  const fields = {} as Record<ExtractedFieldKey, ReviewField>;
+  for (const [field, columns] of Object.entries(FIELD_COLUMNS) as [ExtractedFieldKey, FieldColumns][]) {
+    fields[field] = {
+      value: normalizeFieldValue(field, row[columns.valueColumn]),
+      confidence: Number(row[columns.confidenceColumn] ?? 0),
+      raw: (row[columns.rawColumn] as string | null) ?? null,
+    };
+  }
+  return {
+    id: row.id as string,
+    documentId: row.document_id as string,
+    page: row.page as number,
+    overallConfidence: Number(row.overall_confidence ?? 0),
+    issues: Array.isArray(row.issues) ? (row.issues as string[]) : [],
+    reviewStatus: row.review_status as ExtractionReviewStatus,
+    publishedProductId: (row.published_product_id as string | null) ?? null,
+    ...fields,
+  };
+}
+
+/** Lista os candidatos de um documento (ordenados por página) para a tela de revisão. */
+export async function listByDocument(documentId: string): Promise<ExtractedProductRecord[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("extracted_products")
+    .select(SELECT_COLUMNS)
+    .eq("document_id", documentId)
+    .order("page")
+    .order("created_at");
+  if (error) throw error;
+  return (data as unknown as Record<string, unknown>[]).map(toRecord);
+}
+
+/** Um único candidato por id (para validar/publicar). RLS restringe à org staff. */
+export async function getExtractedProduct(id: string): Promise<ExtractedProductRecord | null> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("extracted_products")
+    .select(SELECT_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toRecord(data as unknown as Record<string, unknown>) : null;
+}
+
+/**
+ * Edita um campo de um candidato: grava valor normalizado, marca a confiança como
+ * manual (100), recalcula a confiança geral e carimba edited_by/edited_at.
+ */
+export async function updateField(
+  id: string,
+  field: ExtractedFieldKey,
+  value: string | null,
+): Promise<void> {
+  const profile = await getCurrentProfile();
+  const supabase = await createServerSupabase();
+
+  const current = await getExtractedProduct(id);
+  if (!current) throw new Error("Produto extraído não encontrado");
+
+  const columns = FIELD_COLUMNS[field];
+  const manualConfidence = value === null ? 0 : 100;
+
+  // Recalcula a confiança geral (média dos 7 campos) com o novo valor manual.
+  const confidences = (Object.keys(FIELD_COLUMNS) as ExtractedFieldKey[]).map((f) =>
+    f === field ? manualConfidence : current[f].confidence,
+  );
+  const overall = Math.round(confidences.reduce((sum, c) => sum + c, 0) / confidences.length);
+
+  const patch: Record<string, unknown> = {
+    [columns.valueColumn]: value,
+    [columns.confidenceColumn]: manualConfidence,
+    overall_confidence: overall,
+    edited_by: profile.id,
+    edited_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("extracted_products").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+/** Transiciona o status de revisão (aprovar/rejeitar/publicar). */
+export async function setReviewStatus(
+  id: string,
+  status: ExtractionReviewStatus,
+  publishedProductId?: string,
+): Promise<void> {
+  const supabase = await createServerSupabase();
+  const patch: Record<string, unknown> = { review_status: status };
+  if (publishedProductId !== undefined) patch.published_product_id = publishedProductId;
+  const { error } = await supabase.from("extracted_products").update(patch).eq("id", id);
+  if (error) throw error;
 }
 
 /** Conta os candidatos de um documento por status (usado por telas de revisão/testes). */

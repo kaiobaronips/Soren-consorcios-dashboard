@@ -86,6 +86,83 @@ export type NewProduct = {
   first12InstallmentAmount: string | null; correctionIndex: Product["correctionIndex"];
 };
 
+/** Origem de extração de PDF gravada em produtos publicados a partir da Base de Produtos. */
+export type PdfSource = {
+  sourceDocumentId: string;
+  sourcePage: number;
+  extractionConfidence: number;
+};
+
+export type PublishProductInput = NewProduct & PdfSource;
+
+/**
+ * Localiza o produto existente pela chave de dedup da Fase 2
+ * (product_code + category + term_months + credit_amount; org via RLS).
+ */
+export async function findDuplicateProduct(
+  productCode: string,
+  category: Product["category"],
+  termMonths: number,
+  creditAmount: string,
+): Promise<Product | null> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("consortium_products")
+    .select(COLUMNS)
+    .eq("product_code", productCode)
+    .eq("category", category)
+    .eq("term_months", termMonths)
+    .eq("credit_amount", creditAmount)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toProduct(data as Row) : null;
+}
+
+/** Colunas gravadas tanto no insert quanto no update ao publicar a partir do PDF. */
+function toPublishRow(p: PublishProductInput): Record<string, unknown> {
+  return {
+    product_name: p.productName,
+    product_code: p.productCode,
+    administrator_name: p.administratorName,
+    category: p.category,
+    credit_amount: p.creditAmount,
+    term_months: p.termMonths,
+    total_administration_fee_percent: p.totalAdministrationFeePercent,
+    regular_installment_amount: p.regularInstallmentAmount,
+    first_12_installment_amount: p.first12InstallmentAmount,
+    correction_index: p.correctionIndex,
+    source_document_id: p.sourceDocumentId,
+    source_page: p.sourcePage,
+    extraction_confidence: p.extractionConfidence,
+    status: "active",
+  };
+}
+
+/** Insere um produto novo publicado a partir do PDF (com origem de extração). Retorna o id. */
+export async function insertPublishedProduct(p: PublishProductInput): Promise<string> {
+  const profile = await getCurrentProfile();
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("consortium_products")
+    .insert({
+      organization_id: profile.organizationId,
+      correction_frequency_months: 12,
+      is_demo: false,
+      ...toPublishRow(p),
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+/** Atualiza (versionamento) um produto existente com os dados revisados do PDF. */
+export async function updatePublishedProduct(id: string, p: PublishProductInput): Promise<void> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("consortium_products").update(toPublishRow(p)).eq("id", id);
+  if (error) throw error;
+}
+
 /** Insere produto manual (status active, is_demo false). RLS restringe a staff. Retorna o id. */
 export async function insertProduct(p: NewProduct): Promise<string> {
   const profile = await getCurrentProfile();
