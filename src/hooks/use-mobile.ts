@@ -1,6 +1,8 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Alinhado ao breakpoint "lg" do Tailwind: em tablet (768px) a sidebar também
+// colapsa (offcanvas + trigger), não só em telas de celular.
+const MOBILE_BREAKPOINT = 1024
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(() =>

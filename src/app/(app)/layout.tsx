@@ -7,8 +7,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <AppSidebar profile={profile} />
-      <main className="flex-1 p-6">
-        <SidebarTrigger className="mb-4 md:hidden" />
+      <main className="min-w-0 flex-1 p-6">
+        <SidebarTrigger className="mb-4 lg:hidden" />
         {children}
       </main>
     </SidebarProvider>
