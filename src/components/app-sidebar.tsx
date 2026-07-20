@@ -41,7 +41,7 @@ export function AppSidebar({ profile }: { profile: Profile }) {
       <SidebarFooter className="p-4 text-sm">
         <p className="truncate text-muted-foreground">{profile.name}</p>
         <form action={signOut}>
-          <Button variant="outline" size="sm" className="w-full">Sair</Button>
+          <Button type="submit" variant="outline" size="sm" className="w-full">Sair</Button>
         </form>
       </SidebarFooter>
     </Sidebar>

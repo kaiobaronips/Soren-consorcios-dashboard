@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "db:seed": "tsx scripts/seed.ts",
     "import:xlsx": "tsx scripts/import-xlsx.ts"
   },
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.0.2",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
