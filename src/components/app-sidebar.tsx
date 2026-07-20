@@ -1,47 +1,72 @@
-import Link from "next/link";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
-  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
+import { AppSidebarNav } from "@/components/app-sidebar-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@/repositories/profiles";
 
-const NAV = [
-  { href: "/", label: "Início" },
-  { href: "/atendimento", label: "Novo atendimento" },
-  { href: "/clientes", label: "Clientes" },
-  { href: "/produtos", label: "Produtos" },
-];
+const ROLE_LABEL: Record<Profile["role"], string> = {
+  admin: "Administrador",
+  manager: "Gestor",
+  consultant: "Consultor(a)",
+};
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");
+}
 
 export function AppSidebar({ profile }: { profile: Profile }) {
   // Staff (admin/manager) veem Base de Produtos e Configurações; consultor não.
-  const items =
-    profile.role === "consultant"
-      ? NAV
-      : [...NAV, { href: "/base-produtos", label: "Base de Produtos" }, { href: "/configuracoes", label: "Configurações" }];
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3 font-semibold">Soren Consórcios</SidebarHeader>
+      <SidebarHeader className="px-4 py-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary font-heading text-lg font-semibold text-sidebar-primary-foreground">
+            S
+          </div>
+          <div className="min-w-0">
+            <p className="font-heading text-base leading-tight font-semibold">
+              Soren
+            </p>
+            <p className="text-xs text-sidebar-foreground/60">Consórcios</p>
+          </div>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton render={<Link href={item.href} />}>
-                    {item.label}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <AppSidebarNav isStaff={profile.role !== "consultant"} />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 text-sm">
-        <p className="truncate text-muted-foreground">{profile.name}</p>
+      <SidebarFooter className="gap-3 border-t border-sidebar-border p-4">
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-8 shrink-0">
+            <AvatarFallback className="bg-sidebar-accent text-xs text-sidebar-accent-foreground">
+              {initials(profile.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{profile.name}</p>
+            <p className="text-xs text-sidebar-foreground/60">
+              {ROLE_LABEL[profile.role]}
+            </p>
+          </div>
+          <ThemeToggle />
+        </div>
         <form action={signOut}>
-          <Button type="submit" variant="outline" size="sm" className="w-full">Sair</Button>
+          <Button type="submit" variant="outline" size="sm" className="w-full">
+            Sair
+          </Button>
         </form>
       </SidebarFooter>
     </Sidebar>
