@@ -8,11 +8,7 @@ export default async function ClientesPage() {
   const [clients, consultantNames] = await Promise.all([listClients(), listProfileNames()]);
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Clientes"
-        description={`${clients.length} cliente(s) cadastrado(s)`}
-        action={<ClientForm />}
-      />
+      <PageHeader action={<ClientForm />} />
       <ClientsTable clients={clients} consultantNames={consultantNames} />
     </div>
   );

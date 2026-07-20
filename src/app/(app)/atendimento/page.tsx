@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/page-header";
 import { AtendimentoForm } from "@/features/atendimento/atendimento-form";
 import { getCurrentProfile } from "@/repositories/profiles";
 import { getLatestIndexes } from "@/repositories/indexes";
@@ -14,10 +13,6 @@ export default async function AtendimentoPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Novo atendimento"
-        description="Informe o cliente e o valor disponível para ver os planos elegíveis, ranqueados por compatibilidade."
-      />
       <AtendimentoForm
         indexes={indexes}
         projectedRates={settings.projectedAnnualRates}

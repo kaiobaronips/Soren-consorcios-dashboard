@@ -23,11 +23,7 @@ export default async function ProdutosPage({
   const canManage = profile.role !== "consultant";
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Produtos"
-        description={`${products.length} produto(s) no catálogo`}
-        action={canManage ? <ProductForm /> : undefined}
-      />
+      <PageHeader action={canManage ? <ProductForm /> : undefined} />
       <ProductsFilters current={params} />
       <ProductsTable products={products} canManage={canManage} />
     </div>

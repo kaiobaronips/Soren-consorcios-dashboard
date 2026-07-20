@@ -1,25 +1,9 @@
-export function PageHeader({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div className="space-y-1.5">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
-          {title}
-        </h1>
-        {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        )}
-      </div>
-      {action}
-    </div>
-  );
+/**
+ * Barra de ação da página (estilo Attio): sem título/subtítulo — o contexto vem da
+ * navegação lateral. Renderiza apenas a ação primária, alinhada à direita. Quando não
+ * há ação, não ocupa espaço.
+ */
+export function PageHeader({ action }: { action?: React.ReactNode }) {
+  if (!action) return null;
+  return <div className="flex flex-wrap items-center justify-end gap-2">{action}</div>;
 }
