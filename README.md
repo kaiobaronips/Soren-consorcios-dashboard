@@ -91,8 +91,8 @@ Ainda não implementado: simulação de reajustes IGP-M/IPCA/CDI com sliders e s
 | 2 Produtos | CRUD de produtos, importador XLSX idempotente, listagem, filtros, ativação — **concluída** |
 | 3 Atendimento | Cadastro/busca de clientes, tela "Novo atendimento", elegibilidade, ranking, cards de resultado — **concluída** |
 | 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — **concluída** |
-| 5 CRM | Oportunidades, Kanban, interações, follow-ups, dashboard comercial — disponível na Fase 5 |
-| 6 PDF | Upload de PDFs de produtos, extração, OCR, revisão humana, publicação, versionamento — disponível na Fase 6 |
+| 5 CRM | Oportunidades, Kanban, follow-ups, dashboard comercial — **cancelada** (sistema de atendimento único; ver `PLANS.md`) |
+| 6 PDF | Upload de PDFs de produtos, extração, OCR, revisão humana lado a lado, publicação com versionamento — **concluída** |
 | 7 Qualidade | Testes completos (unitários + E2E), segurança, responsividade, performance, build final — disponível na Fase 7 |
 
 Detalhamento e status atualizado em `PLANS.md`.
@@ -145,9 +145,13 @@ A partir de qualquer card do atendimento, o botão **"Simular"** abre o painel d
 - **`CdiCompoundSlider`** e **comparação com investimentos** (Modo A = aporte igual à parcela; Modo B = capital igual à carta): evolução patrimonial em gráfico, com a ressalva de que consórcio e investimento têm objetivos, riscos e liquidez diferentes.
 - **Salvar simulação**: grava um snapshot imutável (produto + premissas + comparação com CDI no momento). Editar o produto/taxa depois não altera simulações já salvas. O histórico fica na página do cliente (`/clientes/[id]`) e cada simulação gera um resumo imprimível (`/simulacoes/[id]/resumo`).
 
+## Base de Produtos (importação de PDF)
+
+Área administrativa em `/base-produtos` (admin/manager) para transformar tabelas de consórcio em PDF em produtos do catálogo, com **revisão humana obrigatória**: upload arrastar-e-soltar (validação de magic bytes, limite de tamanho, dedup por hash), extração de texto com `pdfjs-dist` e **OCR de fallback** (`tesseract.js`) para PDFs digitalizados, identificação de produtos com confiança por campo (campo não reconhecido fica **pendente**, nunca inventado), revisão lado a lado (PDF × dados) com mapeamento manual de colunas, e publicação com deduplicação/versionamento — nunca automática. Detalhes em `docs/PDF_IMPORT.md`.
+
 ## Geração de PDF / resumo imprimível
 
-Resumo de simulação como página print-friendly do navegador (`@media print`, sem dependência de biblioteca de PDF), em `/simulacoes/[id]/resumo` — **concluído na Fase 4**. Upload e extração de PDFs de produtos (com OCR de fallback) — disponível na Fase 6.
+Resumo de simulação como página print-friendly do navegador (`@media print`, sem dependência de biblioteca de PDF), em `/simulacoes/[id]/resumo` — **concluído na Fase 4**.
 
 ## Segurança e LGPD
 

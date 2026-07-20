@@ -121,6 +121,26 @@ Fluxo por task: agente **Sonnet 5** implementa → **Fable 5** revisa o diff e c
 - UI: painel de simulação (slider de tempo recalculando no cliente via funções puras do domínio, sem round-trip), bloco de premissas com aviso de estimativa, cenários, `CdiCompoundSlider` e comparação com investimentos em gráficos (Recharts); histórico por cliente e resumo imprimível (`@media print`, sem lib de PDF).
 - Casos obrigatórios do prompt §27 cobertos: 8 (IGP-M, `correction.test.ts`), 9 (IPCA, `correction.test.ts`), 10 (taxa zero, `correction.test.ts`), 11 (CDI composto, `investment.test.ts`), 12 (aporte taxa zero, `investment.test.ts`), 13 (aporte taxa positiva, `investment.test.ts`), 14 (limite pelo prazo, `schedule.test.ts`), 19 (snapshot, `simulations.test.ts`), 20 (produto editado não altera simulação, `simulations.test.ts`).
 
-### Fases 5–7
+### Fase 5 — CRM/Pipeline: CANCELADA por decisão do usuário (2026-07-20)
 
-Ainda não iniciadas. Serão detalhadas task a task neste mesmo formato à medida que cada fase for planejada e executada.
+O sistema é de **atendimento único** — o consultor atende um cliente por vez informando o valor disponível e vê os planos compatíveis, simula e (opcionalmente) salva a simulação. Não há necessidade de acompanhar a evolução comercial do cliente ao longo do tempo. Portanto, os itens do prompt §19–21 (pipeline Kanban de oportunidades, follow-ups, dashboard comercial com KPIs) ficam **fora de escopo**. A rota placeholder `/pipeline` e o item de navegação foram removidos (nenhum botão sem função). O cadastro/lista de clientes e o histórico de simulações por cliente (entregues nas Fases 3–4) permanecem, pois sustentam o atendimento.
+
+### Fase 6 — Base de Produtos (PDF) (concluída em 2026-07-20)
+
+| # | Task | Status |
+|---|---|---|
+| 1 | Parsing puro de produtos a partir de texto (`src/lib/pdf/parse-products.ts`) com confiança por campo, campo pendente = null (nunca inventa), validações §8.9 e mapeamento manual — caso 16 do prompt (campo ausente) | ✅ Concluída |
+| 2 | Extração de texto (`pdfjs-dist`) com reconstrução de colunas por geometria + OCR de fallback (`tesseract.js`); fixtures gerados com `pdf-lib` | ✅ Concluída |
+| 3 | Storage seguro (bucket privado + policies staff/org), repository de documentos e upload com magic bytes, sanitização, SHA-256 e dedup por hash | ✅ Concluída |
+| 4 | Pipeline de processamento + tabela staging `extracted_products` (por campo: value/confidence/raw) com revisão pendente | ✅ Concluída |
+| 5 | Revisão humana lado a lado (PDF × dados), edição de campos, mapeamento manual, e publicação com dedup/versionamento auditado — nunca automática | ✅ Concluída |
+| 6 | Gate da Fase 6: build corrigido (`serverExternalPackages` para pdfjs/tesseract/canvas), navegação da Fase 5 removida, docs, push | ✅ Concluída |
+
+**Entregue na Fase 6:**
+- Área "Base de Produtos" (admin/manager) com upload arrastar-e-soltar, processamento com status, revisão lado a lado e publicação — respeitando as regras invioláveis do prompt §8: nunca publica sem aprovação humana; campo não identificado fica pendente e nunca é inventado; página de origem e confiança armazenadas; OCR para digitalizados; mapeamento manual de colunas; validação de carta/parcelas/prazo/taxas; log legível.
+- Parsing e extração 100% testáveis fora do React (`src/lib/pdf`), incluindo o caso obrigatório 16 do prompt (PDF com campo ausente → pendente, não publicável até preenchimento).
+- Publicação com deduplicação e versionamento (UPDATE audita estado anterior/novo) reusando a chave de negócio da Fase 2.
+
+### Fase 7
+
+Ainda não iniciada. Qualidade final: testes E2E (Playwright), segurança, responsividade, documentação e build final.
