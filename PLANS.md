@@ -141,6 +141,55 @@ O sistema é de **atendimento único** — o consultor atende um cliente por vez
 - Parsing e extração 100% testáveis fora do React (`src/lib/pdf`), incluindo o caso obrigatório 16 do prompt (PDF com campo ausente → pendente, não publicável até preenchimento).
 - Publicação com deduplicação e versionamento (UPDATE audita estado anterior/novo) reusando a chave de negócio da Fase 2.
 
-### Fase 7
+### Fase 7 — Qualidade (concluída em 2026-07-20)
 
-Ainda não iniciada. Qualidade final: testes E2E (Playwright), segurança, responsividade, documentação e build final.
+| # | Task | Status |
+|---|---|---|
+| 1 | Infra Playwright + E2E de autenticação (5 cenários); fix real do botão "Sair" (faltava `type="submit"`) | ✅ Concluída |
+| 2 | E2E cadastro de cliente + novo atendimento validando o oráculo da planilha (23/240.000, 6, estado vazio, selo de atenção, alerta de risco); fix de cold-start do dev server (globalSetup + timeout) | ✅ Concluída |
+| 3 | E2E do simulador: slider, cenários, salvar simulação, resumo imprimível com comparação com CDI | ✅ Concluída |
+| 4 | E2E Base de Produtos: upload → processar → revisar → publicar; dedup e bloqueio por campo pendente | ✅ Concluída |
+| 5 | Testes de isolamento RLS — casos 17 (entre consultores) e 18 (entre organizações), bidirecional; `docs/SECURITY.md` (modelo de ameaças T1–T11) | ✅ Concluída |
+| 6 | Responsividade tablet/mobile (E2E) + 2 fixes reais de layout (`min-w-0` no main, breakpoint da sidebar) | ✅ Concluída |
+| 7 | `docs/DEPLOYMENT.md`, verificação dos critérios de aceite, README, gate final e push | ✅ Concluída |
+
+**Entregue na Fase 7:**
+- Suíte E2E Playwright (21 testes): autenticação, atendimento (oráculo da planilha), simulador, Base de Produtos e responsividade — rodando headless via `pnpm test:e2e` com aquecimento do dev server.
+- Testes de isolamento RLS provando os casos 17 e 18 do prompt com usuários reais autenticados (a policy do Postgres é a barreira, não o código).
+- `docs/SECURITY.md` (ameaças e mitigações) e `docs/DEPLOYMENT.md` (roteiro Vercel + Supabase Cloud, com os riscos de PDF/OCR em serverless).
+- Bugs reais corrigidos pela verificação E2E: logout sem `type="submit"` (quebrava para usuários reais), cold-start do dev server, e dois problemas de layout responsivo.
+- Gate final verde: `pnpm lint` (0), `pnpm typecheck` (0), `pnpm test` (139 unitários/integração), `pnpm test:e2e` (21) e `pnpm build`.
+
+**Mapeamento dos critérios de aceite (prompt §32):**
+
+| # | Critério | Cobertura |
+|---|---|---|
+| 1 | Consultor entra com sua conta | E2E `auth.spec.ts` |
+| 2 | Cadastrar cliente | E2E `atendimento.spec.ts` |
+| 3 | Nome + valor disponível → planos compatíveis | E2E `atendimento.spec.ts` (oráculo) |
+| 4 | Resultados usam dados reais da planilha | `oracle.test.ts` + importador |
+| 5 | Maior carta pagável correta | oráculo (240.000) |
+| 6 | Quantidade de elegíveis correta | oráculo (23/6) |
+| 7 | Folga mensal correta | `eligibility.test.ts` |
+| 8 | Parcela inicial claramente apresentada | E2E atendimento (selo de atenção) |
+| 9 | Selecionar plano | E2E `simulacao.spec.ts` |
+| 10 | Slider atualiza IGP-M/IPCA | E2E `simulacao.spec.ts` |
+| 11 | Slider respeita o prazo | `schedule.test.ts` (caso 14) |
+| 12 | CDI com juros compostos | `investment.test.ts` (caso 11) |
+| 13 | Gráfico compara consórcio × investimento | painel de simulação / `investment-comparison` |
+| 14 | Simulação salva | E2E `simulacao.spec.ts` |
+| 15 | Snapshot mantido | `simulations.test.ts` (casos 19/20) |
+| 16 | Oportunidade criada | **N/A — Fase 5 cancelada** |
+| 17 | Consultor vê só seus dados | `rls-isolation.test.ts` (caso 17) |
+| 18 | Admin envia PDF | E2E `base-produtos.spec.ts` |
+| 19 | Produtos do PDF passam por revisão | E2E `base-produtos.spec.ts` |
+| 20 | Dashboard usa dados reais | **N/A — Fase 5 cancelada** |
+| 21 | App funciona em desktop e tablet | E2E `responsive.spec.ts` |
+| 22 | Lint, typecheck, testes e build passam | gate final |
+| 23 | README permite instalar | `README.md` |
+
+21 dos 23 critérios cobertos; 16 e 20 são N/A por dependerem da Fase 5 (CRM/dashboard comercial), cancelada por decisão do usuário.
+
+## Status do projeto: MVP completo
+
+Fases 1–4, 6 e 7 concluídas; Fase 5 cancelada. Pendências deliberadas: **design visual final** (a ser feito com o usuário, conforme combinado) e **deploy em produção** (roteiro em `docs/DEPLOYMENT.md`).

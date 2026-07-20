@@ -68,20 +68,37 @@ pnpm dev                 # servidor de desenvolvimento
 pnpm build                 # build de produção
 pnpm lint                  # ESLint
 pnpm typecheck              # tsc --noEmit
-pnpm test                    # Vitest (unitários)
+pnpm test                    # Vitest (unitários + integração RLS)
 pnpm test:watch               # Vitest em modo watch
-pnpm db:seed                   # roda scripts/seed.ts (idempotente)
+pnpm test:e2e                  # Playwright (end-to-end)
+pnpm db:seed                    # roda scripts/seed.ts (idempotente)
+pnpm import:xlsx references/consorcio.xlsx   # importa os 63 produtos da planilha
 
-pnpm supabase start             # sobe o Supabase local
-pnpm supabase stop                # derruba o Supabase local
-pnpm supabase db reset              # reaplica todas as migrations + seed do zero
+pnpm exec supabase start             # sobe o Supabase local
+pnpm exec supabase stop                # derruba o Supabase local
+pnpm exec supabase db reset              # reaplica todas as migrations do zero
 ```
 
-## Estado atual: Fase 3 — Atendimento concluída
+> Use sempre `pnpm exec supabase` (a versão do projeto), não um binário global — há incompatibilidade conhecida de parsing do `config.toml` em versões diferentes.
 
-Concluído até aqui: scaffold do projeto, análise da planilha de referência, Supabase local com migrations (schema completo das 11 tabelas, RLS, grants), seed de desenvolvimento, autenticação (login/logout via Supabase Auth, proteção de rotas por `src/proxy.ts`), layout base com sidebar, CRUD de produtos completo (normalização decimal-safe, parser XLSX com testes-oráculo, plano de importação idempotente, script `pnpm import:xlsx`, página `/produtos`), e o fluxo de atendimento completo — cadastro/busca de clientes, domínio de elegibilidade/ranking (`src/domain/eligibility`, `src/domain/recommendation`) e a tela "Novo atendimento" (`/atendimento`). Ver `PLANS.md` para o detalhamento task a task.
+## Testes
 
-Ainda não implementado: simulação de reajustes IGP-M/IPCA/CDI com sliders e snapshots (Fase 4), oportunidades/CRM, dashboard comercial, upload/extração de PDF.
+- **Unitários e de integração** (`pnpm test`, Vitest): domínio financeiro e de elegibilidade (validado contra o **oráculo da planilha** — os 4 clientes reais e os 63 produtos), parsing de XLSX/PDF, normalização decimal, snapshot de simulação e **isolamento RLS** (casos 17/18: entre consultores e entre organizações). Os testes de RLS assumem o Supabase local de pé e semeado.
+- **End-to-end** (`pnpm test:e2e`, Playwright): autenticação, cadastro de cliente + novo atendimento (conferindo os números da planilha), simulador (slider/cenários/salvar/resumo), Base de Produtos (upload → revisão → publicação) e responsividade tablet/mobile. O Playwright sobe o dev server automaticamente e aquece as rotas antes da suíte.
+
+## Estado atual: MVP completo (Fases 1–4, 6 e 7)
+
+Fluxo completo funcionando e testado (unitário + E2E): autenticação, cadastro de cliente, **novo atendimento** com elegibilidade/ranking validados contra o oráculo da planilha, **simulador financeiro** (correção IGP-M/IPCA, CDI com juros compostos, comparação com investimentos, cenários e snapshots imutáveis), resumo imprimível, e **Base de Produtos** (importação de PDF com revisão humana obrigatória e publicação com versionamento). Isolamento por organização e por consultor garantido por RLS e testado. Ver `PLANS.md` para o detalhamento task a task e o mapeamento dos critérios de aceite.
+
+**Pendências deliberadas:** o **design visual final** (a ser feito com o cliente, segundo seus critérios) e o **deploy em produção** (roteiro em `docs/DEPLOYMENT.md`). A **Fase 5** (CRM/Kanban/dashboard comercial) foi **cancelada** por decisão do cliente — o sistema é de atendimento único.
+
+## Limitações conhecidas
+
+- **Design visual:** a interface usa componentes shadcn/ui neutros, sem identidade visual — o design final será definido em conjunto com o cliente.
+- **Deploy:** não executado; roteiro em `docs/DEPLOYMENT.md`. A extração de PDF/OCR precisa de revalidação no runtime serverless (ver riscos no documento).
+- **OCR:** tabelas digitalizadas complexas tendem a gerar muitos campos pendentes (por design — o sistema prefere pendente a inventar dado).
+- **Índices econômicos:** cadastrados manualmente com origem e data; a sincronização automática com fontes oficiais (SGS/Bacen) é roadmap.
+- **LGPD / exclusão lógica:** `deleted_at` está no schema; a anonimização/exclusão pela aplicação é roadmap (ver `docs/SECURITY.md`).
 
 ## Roadmap de fases
 
@@ -93,13 +110,13 @@ Ainda não implementado: simulação de reajustes IGP-M/IPCA/CDI com sliders e s
 | 4 Simulador | Correção IGP-M/IPCA/CDI, sliders, gráficos, premissas, cenários, snapshots de simulação, resumo imprimível — **concluída** |
 | 5 CRM | Oportunidades, Kanban, follow-ups, dashboard comercial — **cancelada** (sistema de atendimento único; ver `PLANS.md`) |
 | 6 PDF | Upload de PDFs de produtos, extração, OCR, revisão humana lado a lado, publicação com versionamento — **concluída** |
-| 7 Qualidade | Testes completos (unitários + E2E), segurança, responsividade, performance, build final — disponível na Fase 7 |
+| 7 Qualidade | Testes completos (unitários + E2E), segurança (RLS/isolamento), responsividade, documentação e build final — **concluída** |
 
 Detalhamento e status atualizado em `PLANS.md`.
 
 ## Deploy
 
-Não executado neste ciclo. O plano é rodar localmente (`pnpm dev`) durante todo o desenvolvimento; documentação de deploy para Vercel (`docs/DEPLOYMENT.md`) será escrita e o deploy realizado apenas na Fase 7 — disponível na Fase 7.
+Não executado neste ciclo — o desenvolvimento roda localmente (`pnpm dev` + Supabase local). O roteiro completo de deploy para Vercel + Supabase Cloud (migrations, variáveis de ambiente, primeiro admin, seed/import e os riscos de PDF/OCR em serverless) está em `docs/DEPLOYMENT.md`.
 
 ## Importação de dados (XLSX)
 
