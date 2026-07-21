@@ -1,4 +1,5 @@
 import Decimal from "decimal.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export type FinancialIndex = {
@@ -54,4 +55,52 @@ export async function getLatestIndexes(): Promise<Record<string, FinancialIndex>
     }
   }
   return latest;
+}
+
+/**
+ * Grava (insere/atualiza) um valor de índice em `financial_indexes` — usado pela
+ * sincronização com fontes oficiais. Recebe um client já autenticado (service role no
+ * job de sync), pois roda fora de uma requisição de usuário. Dedup por
+ * (index_code, reference_period, organization_id) — aqui sempre global (organization_id nulo).
+ */
+export async function upsertGlobalIndex(
+  supabase: SupabaseClient,
+  params: {
+    indexCode: string;
+    referencePeriod: string;
+    annualRatePercent: string;
+    monthlyRatePercent?: string | null;
+    source: string;
+    sourceUrl?: string | null;
+    projected: boolean;
+  },
+): Promise<void> {
+  const payload = {
+    index_code: params.indexCode,
+    reference_period: params.referencePeriod,
+    annual_rate: params.annualRatePercent,
+    monthly_rate: params.monthlyRatePercent ?? null,
+    source: params.source,
+    source_url: params.sourceUrl ?? null,
+    projected: params.projected,
+    updated_at: new Date().toISOString(),
+  };
+  // O índice único usa coalesce(organization_id, ...), incompatível com onConflict do
+  // PostgREST — buscamos o registro global equivalente e atualizamos, senão inserimos.
+  const { data: existing, error: selErr } = await supabase
+    .from("financial_indexes")
+    .select("id")
+    .is("organization_id", null)
+    .eq("index_code", params.indexCode)
+    .eq("reference_period", params.referencePeriod)
+    .maybeSingle();
+  if (selErr) throw selErr;
+
+  if (existing) {
+    const { error } = await supabase.from("financial_indexes").update(payload).eq("id", existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("financial_indexes").insert({ organization_id: null, ...payload });
+    if (error) throw error;
+  }
 }
