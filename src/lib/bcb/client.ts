@@ -9,12 +9,19 @@ export type SgsPoint = { data: string; valor: string };
 const BASE = "https://api.bcb.gov.br/dados/serie/bcdata.sgs";
 
 /** Busca os últimos `n` pontos de uma série do SGS. Timeout curto; erro → exceção tratada no serviço. */
-export async function fetchSgsSeries(seriesCode: number, last: number, timeoutMs = 8000): Promise<SgsPoint[]> {
+export async function fetchSgsSeries(seriesCode: number, last: number, timeoutMs = 25000): Promise<SgsPoint[]> {
   const url = `${BASE}.${seriesCode}/dados/ultimos/${last}?formato=json`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } });
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        // A API do SGS costuma bloquear/travar requisições sem User-Agent de navegador.
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      },
+    });
     if (!res.ok) throw new Error(`SGS ${seriesCode} respondeu HTTP ${res.status}`);
     const json = (await res.json()) as SgsPoint[];
     if (!Array.isArray(json)) throw new Error(`SGS ${seriesCode}: resposta inesperada`);
