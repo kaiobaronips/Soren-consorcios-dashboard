@@ -62,7 +62,16 @@ export async function syncIndexesFromBcb(supabase: SupabaseClient): Promise<Sync
       }
       result.updated.push(indexCode);
     } catch (e) {
-      result.failed.push({ indexCode, reason: e instanceof Error ? e.message : String(e) });
+      // "fetch failed" do undici esconde o erro real em `cause` (ENOTFOUND, ECONNREFUSED,
+      // erro de TLS...). Expor a causa é o que diz por que a conexão falhou.
+      let reason = e instanceof Error ? e.message : String(e);
+      const cause = (e as { cause?: unknown })?.cause;
+      if (cause) {
+        const causeMsg = cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
+        const code = (cause as { code?: string })?.code;
+        reason += ` (causa: ${code ? code + " — " : ""}${causeMsg})`;
+      }
+      result.failed.push({ indexCode, reason });
     }
   }
 
