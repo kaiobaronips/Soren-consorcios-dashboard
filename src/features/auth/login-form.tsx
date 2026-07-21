@@ -11,31 +11,19 @@ export function LoginForm() {
       {/* Linha de acento superior */}
       <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
-      {/* Logo mobile (visível só em telas pequenas) */}
+      {/* Logo centralizada no topo do card */}
       <div
-        className="animate-fade-up mb-6 flex justify-center md:hidden"
+        className="animate-fade-up mb-7 flex justify-center"
         style={{ animationDelay: "0.1s" }}
       >
         <Image
-          src="/soren-logo.png"
-          alt="Soren"
-          width={925}
-          height={241}
+          src="/soren-logo-gold.png"
+          alt="Soren Consórcios"
+          width={210}
+          height={92}
           priority
-          className="h-9 w-auto"
+          className="h-14 w-auto"
         />
-      </div>
-
-      <div
-        className="animate-fade-up mb-7 space-y-1"
-        style={{ animationDelay: "0.2s" }}
-      >
-        <h2 className="font-heading text-xl font-bold tracking-tight text-card-foreground">
-          Soren Consórcios
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Sistema comercial de atendimento
-        </p>
       </div>
 
       <form action={action} className="space-y-4">

@@ -104,7 +104,7 @@ export default function LoginPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
                 Plataforma Comercial
               </p>
-              <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-card-foreground lg:text-5xl">
+              <h1 className="font-heading text-4xl font-normal leading-[1.1] tracking-tight text-card-foreground lg:text-5xl">
                 A simulação certa
                 <br />
                 fecha o <span className="text-primary">consórcio certo</span>.
