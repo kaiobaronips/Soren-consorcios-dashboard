@@ -42,14 +42,15 @@ export async function getLatestIndexes(): Promise<Record<string, FinancialIndex>
   const { data, error } = await supabase
     .from("financial_indexes")
     .select("index_code, annual_rate, reference_period, source, projected, updated_at")
-    .order("reference_period", { ascending: false });
+    .order("updated_at", { ascending: false });
   if (error) throw error;
 
   const rows = (data ?? []) as Row[];
   const latest: Record<string, FinancialIndex> = {};
   for (const row of rows) {
-    // rows já vêm ordenadas por reference_period desc: a primeira ocorrência de cada
-    // index_code é a mais recente.
+    // Ordenado por updated_at desc: a primeira ocorrência de cada index_code é o valor
+    // mais recentemente obtido (a sincronização do BCB vence o seed antigo, mesmo que a
+    // reference_period do seed seja "mais nova" — IGP-M/IPCA fecham no mês anterior).
     if (!(row.index_code in latest)) {
       latest[row.index_code] = toFinancialIndex(row);
     }
