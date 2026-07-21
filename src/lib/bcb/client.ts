@@ -3,6 +3,12 @@
  * Sem autenticação. Nunca lança para o chamador travar uma tela — o serviço de
  * sincronização trata falha/timeout e mantém o último valor bom no banco.
  */
+import net from "node:net";
+
+// A API do SGS publica endereço IPv6; se o IPv6 da rede não conecta, o fetch do Node
+// trava (UND_ERR_CONNECT_TIMEOUT) em vez de cair para IPv4. Habilitar "Happy Eyeballs"
+// (autoSelectFamily) faz o Node correr IPv4 e IPv6 e usar o que conectar primeiro.
+net.setDefaultAutoSelectFamily?.(true);
 
 export type SgsPoint = { data: string; valor: string };
 
