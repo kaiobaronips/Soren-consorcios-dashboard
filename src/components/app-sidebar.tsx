@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -28,17 +29,18 @@ export function AppSidebar({ profile }: { profile: Profile }) {
   // Staff (admin/manager) veem Base de Produtos e Configurações; consultor não.
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary font-heading text-lg font-semibold text-sidebar-primary-foreground">
-            S
-          </div>
-          <div className="min-w-0">
-            <p className="font-heading text-base leading-tight font-semibold">
-              Soren
-            </p>
-            <p className="text-xs text-sidebar-foreground/60">Consórcios</p>
-          </div>
+      <SidebarHeader className="px-3 py-4">
+        {/* Logo Soren (fundo removido). A placa verde-escura da marca mantém o
+            letreiro branco legível sobre a sidebar clara. */}
+        <div className="flex items-center justify-center rounded-lg bg-[#0d201a] px-4 py-3">
+          <Image
+            src="/soren-logo.png"
+            alt="Soren Consórcios"
+            width={925}
+            height={241}
+            priority
+            className="h-auto w-full max-w-[150px]"
+          />
         </div>
       </SidebarHeader>
       <SidebarContent>
