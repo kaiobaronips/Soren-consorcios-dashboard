@@ -1,5 +1,4 @@
 import { AtendimentoForm } from "@/features/atendimento/atendimento-form";
-import { IndicesWidgets } from "@/features/atendimento/indices-widgets";
 import { getCurrentProfile } from "@/repositories/profiles";
 import { getLatestIndexes } from "@/repositories/indexes";
 import { getOrgSettings } from "@/repositories/settings";
@@ -14,7 +13,6 @@ export default async function AtendimentoPage() {
 
   return (
     <div className="space-y-6">
-      <IndicesWidgets indexes={indexes} />
       <AtendimentoForm
         indexes={indexes}
         projectedRates={settings.projectedAnnualRates}
