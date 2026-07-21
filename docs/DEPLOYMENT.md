@@ -36,9 +36,10 @@ Configurar no projeto Vercel (Production e Preview), a partir do `.env.example`:
 | `DATABASE_URL` | connection string do Postgres (scripts/seed) |
 | `APP_URL` | URL pública da aplicação (ex.: `https://soren.vercel.app`) |
 | `MAX_PDF_SIZE_MB` | limite de upload de PDF (ex.: `20`) |
-| `ENABLE_INDEX_SYNC` | `false` (sincronização automática de índices é roadmap) |
+| `CRON_SECRET` | segredo forte que protege `/api/cron/sync-indexes`. A Vercel o envia como `Authorization: Bearer <valor>` ao disparar o cron; sem ele a rota rejeita **toda** chamada (401). Ver seção 7 |
+| `ENABLE_INDEX_SYNC` | **legado / no-op** — não é mais lido por nenhum código (`grep` em `src/`/`scripts/` não encontra uso). O gating real do cron é o `CRON_SECRET`. Pode omitir com segurança |
 
-`SUPABASE_SERVICE_ROLE_KEY` só é lida em scripts (`scripts/seed.ts`, `scripts/import-xlsx.ts`) e nunca em código de client — o build falha cedo se alguém tentar importá-la num componente client.
+`SUPABASE_SERVICE_ROLE_KEY` é lida nos scripts (`scripts/seed.ts`, `scripts/import-xlsx.ts`, `scripts/sync-indexes.ts`) e na rota de cron `/api/cron/sync-indexes` (server-only, runtime Node) — nunca em código de client; o build falha cedo se alguém tentar importá-la num componente client.
 
 ## 4. Criar o primeiro administrador e os dados iniciais
 
@@ -63,7 +64,71 @@ A migration `..._storage_product_documents.sql` cria o bucket privado `product-d
 3. Definir as variáveis de ambiente (passo 3).
 4. Deploy.
 
-## 7. Checklist pós-deploy
+## 7. Sincronização de índices econômicos (Banco Central / SGS)
+
+Os índices que alimentam as simulações (IGP-M, IPCA, CDI, poupança) vêm da API do **SGS — Sistema Gerenciador de Séries Temporais** do Banco Central e são gravados em `financial_indexes` com `source = "Banco Central (SGS)"` e `projected = false`. A lógica está em `src/services/sync-indexes.ts` (séries e normalização) e é compartilhada pelo script CLI e pela rota de cron.
+
+### Séries usadas
+
+Configuráveis em `SGS_SERIES` (`src/services/sync-indexes.ts`) — valide cada código contra a API real antes de subir para produção:
+
+| Índice | Código SGS | Normalização |
+|---|---|---|
+| IGP-M | 189 | mensal → anual (acumula 12 meses) |
+| IPCA | 433 | mensal → anual (acumula 12 meses) |
+| CDI | 12 | diário → anual (`(1+d)^252`) |
+| Poupança (`SAVINGS`) | 195 | mensal → anual (acumula 12 meses) |
+
+> Confira uma série manualmente assim: `https://api.bcb.gov.br/dados/serie/bcdata.sgs.189/dados/ultimos/1?formato=json`.
+
+### Execução manual (one-off)
+
+Com as variáveis de produção no ambiente (ou `.env.local` apontando para o Supabase Cloud):
+
+```bash
+pnpm sync:indexes
+```
+
+O script imprime um relatório `Atualizados: … / Falhas: …`. **Falha parcial não é erro fatal:** cada índice é sincronizado de forma independente e, se a API do Bacen falhar/der timeout para um deles, o último valor bom permanece no banco (fallback) — a UI nunca fica sem dado. Rode este comando uma vez logo após o deploy para popular os índices oficiais.
+
+### Cron diário (Vercel)
+
+`vercel.json` declara o cron:
+
+```json
+{
+  "crons": [{ "path": "/api/cron/sync-indexes", "schedule": "0 10 * * *" }]
+}
+```
+
+- Roda **diariamente às 10:00 UTC** (07:00 no horário de Brasília). Ajuste o `schedule` (cron UTC) se quiser outro horário.
+- O arquivo é aplicado automaticamente no deploy — nenhuma configuração extra no painel além da env `CRON_SECRET`.
+- A rota (`src/app/api/cron/sync-indexes/route.ts`) roda no **runtime Node** (`runtime = "nodejs"`, `maxDuration = 60`), usa a service role e chama a mesma `syncIndexesFromBcb`.
+
+### Proteção por `CRON_SECRET` (obrigatória)
+
+A rota é uma URL HTTP pública. Ela só aceita a requisição se o header `Authorization` for exatamente `Bearer <CRON_SECRET>`; caso contrário responde **401**. A Vercel injeta esse header automaticamente nas chamadas de cron **quando a env `CRON_SECRET` está definida no projeto**.
+
+1. Gere um segredo forte (guarde em local seguro):
+   ```bash
+   openssl rand -hex 32
+   ```
+2. Em **Vercel → Project → Settings → Environment Variables**, adicione `CRON_SECRET` com esse valor (Production; Preview se quiser testar lá).
+3. Redeploy para o cron passar a autenticar. Sem a env, **todas** as execuções do cron retornam 401 e nenhum índice é atualizado.
+
+> Já existe um `CRON_SECRET` gerado nesta configuração (no histórico da sessão de setup). Reutilize-o ou gere um novo — se gerar novo, atualize a env na Vercel.
+
+### Teste rápido da rota
+
+```bash
+# Deve retornar 401 (sem/errado o secret):
+curl -i https://<app>.vercel.app/api/cron/sync-indexes
+
+# Deve retornar { "ok": true, "updated": [...], "failed": [...] }:
+curl -i -H "Authorization: Bearer $CRON_SECRET" https://<app>.vercel.app/api/cron/sync-indexes
+```
+
+## 8. Checklist pós-deploy
 
 - [ ] Login com o admin real funciona; rota protegida redireciona sem sessão.
 - [ ] `/produtos` lista os 63 produtos importados.
@@ -71,6 +136,8 @@ A migration `..._storage_product_documents.sql` cria o bucket privado `product-d
 - [ ] Simulação salva e resumo imprimível funcionam.
 - [ ] Base de Produtos: upload de um PDF de teste → processa → revisa → publica.
 - [ ] Isolamento: um usuário não vê dados de outra organização (validado pelos testes `rls-isolation.test.ts` em dev; reconferir com dois usuários reais).
+- [ ] Índices: `pnpm sync:indexes` rodou uma vez e populou IGP-M/IPCA/CDI/poupança com `source = "Banco Central (SGS)"`; o simulador exibe as premissas com origem oficial e data.
+- [ ] Cron: `CRON_SECRET` configurado na Vercel; `curl` sem o segredo dá 401 e com o segredo dá `{ "ok": true }` (seção 7).
 
 ## Riscos e pontos de atenção em produção (serverless)
 
