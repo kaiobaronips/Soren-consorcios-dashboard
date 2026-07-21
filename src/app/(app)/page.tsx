@@ -28,9 +28,6 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       <section className="max-w-2xl animate-fade-up space-y-5 pt-6">
-        <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-          Soren Consórcios
-        </p>
         <h1 className="font-heading text-4xl leading-tight font-semibold text-balance sm:text-5xl sm:leading-tight">
           Atendimento de consórcio, do valor disponível à simulação.
         </h1>
