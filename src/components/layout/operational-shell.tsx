@@ -51,6 +51,22 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((item) => item[0]?.toUpperCase()).join("");
 }
 
+function getRouteSegments(pathname: string): string[] {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return ["Operações", "visao-geral"];
+  const labels: Record<string, string> = {
+    atendimento: "Atendimento",
+    clientes: "Clientes",
+    produtos: "Produtos",
+    inventario: "Inventário",
+    analytics: "Analytics",
+    relatorios: "Relatórios",
+    "base-produtos": "Base de produtos",
+    configuracoes: "Configurações",
+  };
+  return segments.map((segment, index) => labels[segment] ?? (index === segments.length - 1 ? segment : segment.replace(/-/g, " ")));
+}
+
 function IconButton({ label, children, className, ...props }: React.ComponentProps<typeof Button> & { label: string }) {
   return (
     <Tooltip>
@@ -125,6 +141,13 @@ export function OperationalShell({ children, profile }: { children: React.ReactN
       <div className="enterprise-sidebar-desktop">{sidebar}</div>
       {mobileOpen && <div className="enterprise-mobile-sidebar"><button className="enterprise-mobile-overlay" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} />{sidebar}</div>}
       <main className={cn("enterprise-main", expanded && "enterprise-main-expanded")}>
+        <nav className="enterprise-route-bar" aria-label="Rota aberta">
+          {getRouteSegments(pathname).map((segment, index) => (
+            <span key={`${segment}-${index}`} className={index === 0 ? "enterprise-route-primary" : "enterprise-route-secondary"}>
+              {segment}
+            </span>
+          ))}
+        </nav>
         <div className="enterprise-content">{children}</div>
       </main>
     </div>

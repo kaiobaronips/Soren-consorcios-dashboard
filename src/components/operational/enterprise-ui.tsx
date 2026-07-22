@@ -12,6 +12,24 @@ export function EnterpriseButton({ children, variant = "secondary", className, .
   return <Button className={cn("enterprise-button", variant === "primary" ? "enterprise-button-primary" : "enterprise-button-secondary", className)} {...props}>{children}</Button>;
 }
 
+export function EnterpriseModalSection({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("enterprise-modal-body", className)}>{children}</div>;
+}
+
+export function EnterpriseField({
+  id,
+  label,
+  children,
+  className,
+}: {
+  id: string;
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("space-y-1.5", className)}><label htmlFor={id} className="enterprise-field-label">{label}</label>{children}</div>;
+}
+
 export function FilterToolbar({ onRefresh, lastUpdated = "Atualizado há 4 minutos" }: { onRefresh?: () => void; lastUpdated?: string }) {
   return <div className="enterprise-toolbar" aria-label="Filtros"><button type="button" className="enterprise-filter-chip">Período: últimos 30 dias <X aria-hidden /></button><button type="button" className="enterprise-filter-chip">Status: ativo <X aria-hidden /></button><button type="button" className="enterprise-reset">Redefinir filtros</button><span className="ml-auto text-xs text-[#6f6f6f]">{lastUpdated}</span><EnterpriseButton onClick={onRefresh} aria-label="Atualizar dados"><RefreshCw aria-hidden /> Atualizar</EnterpriseButton><EnterpriseButton aria-label="Exportar relatório"><Download aria-hidden /> Exportar</EnterpriseButton></div>;
 }

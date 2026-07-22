@@ -58,6 +58,7 @@ export async function searchClients(term: string, limit = 20): Promise<Client[]>
   if (sanitized) {
     q = q.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,phone.ilike.%${sanitized}%`);
   }
+  q = q.is("deleted_at", null);
   const { data, error } = await q;
   if (error) throw error;
   return (data as Row[]).map(toClient);
@@ -66,14 +67,14 @@ export async function searchClients(term: string, limit = 20): Promise<Client[]>
 /** Lista clientes visíveis ao usuário (RLS aplica o filtro por papel/org). */
 export async function listClients(): Promise<Client[]> {
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("clients").select(COLUMNS).order("name");
+  const { data, error } = await supabase.from("clients").select(COLUMNS).is("deleted_at", null).order("name");
   if (error) throw error;
   return (data as Row[]).map(toClient);
 }
 
 export async function getClient(id: string): Promise<Client | null> {
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("clients").select(COLUMNS).eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("clients").select(COLUMNS).eq("id", id).is("deleted_at", null).maybeSingle();
   if (error) throw error;
   return data ? toClient(data as Row) : null;
 }
@@ -101,6 +102,27 @@ export async function insertClient(data: NewClient): Promise<string> {
   }).select("id").single();
   if (error) throw error;
   return inserted.id;
+}
+
+export async function updateClient(id: string, data: NewClient): Promise<void> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("clients").update({
+    name: data.name,
+    email: data.email ?? null,
+    phone: data.phone ?? null,
+    monthly_income: data.monthlyIncome ?? null,
+    monthly_available_amount: data.monthlyAvailableAmount ?? null,
+  }).eq("id", id).is("deleted_at", null);
+  if (error) throw error;
+}
+
+export async function deleteClient(id: string): Promise<void> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("clients").update({
+    status: "inactive",
+    deleted_at: new Date().toISOString(),
+  }).eq("id", id).is("deleted_at", null);
+  if (error) throw error;
 }
 
 /** Atualiza os dados financeiros do cliente. RLS (policy clients_update) restringe ao consultor dono ou staff. */

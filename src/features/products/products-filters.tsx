@@ -33,7 +33,7 @@ export function ProductsFilters({ current }: { current: { categoria?: string; st
     <div className="enterprise-toolbar">
       <Input
         placeholder="Buscar por nome ou código..."
-        className="h-8 max-w-56 rounded-none border-[#d9d9d9] bg-white"
+        className="h-7 max-w-56 rounded-none border-[#d9d9d9] bg-white"
         style={{ fontSize: "12px", lineHeight: "16px" }}
         defaultValue={current.busca ?? ""}
         onKeyDown={(e) => {
@@ -43,7 +43,7 @@ export function ProductsFilters({ current }: { current: { categoria?: string; st
       <div className="flex overflow-hidden rounded-none border border-[#63aef7]" role="group" aria-label="Categoria">
         {CATEGORIES.map((c) => (
           <Button key={c.value}
-            className={`h-7 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.categoria ?? "") === c.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
+            className={`h-6 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.categoria ?? "") === c.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
             style={{ fontSize: "12px", lineHeight: "16px" }}
             onClick={() => apply({ categoria: c.value })}>
             {c.label}
@@ -53,7 +53,7 @@ export function ProductsFilters({ current }: { current: { categoria?: string; st
       <div className="flex overflow-hidden rounded-none border border-[#63aef7]" role="group" aria-label="Status">
         {STATUSES.map((s) => (
           <Button key={s.value}
-            className={`h-7 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.status ?? "") === s.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
+            className={`h-6 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.status ?? "") === s.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
             style={{ fontSize: "12px", lineHeight: "16px" }}
             onClick={() => apply({ status: s.value })}>
             {s.label}
