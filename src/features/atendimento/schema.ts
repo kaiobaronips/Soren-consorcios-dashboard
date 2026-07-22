@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-const decimalString = z.string().regex(/^\d+(\.\d{1,2})?$/, "Valor inválido (use 1234.56)");
+function normalizeMoneyInput(value: string, ctx: z.RefinementCtx): string {
+  const trimmed = value.trim();
+  if (trimmed === "") return "";
+  const normalized = trimmed.replace(/\./g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    ctx.addIssue({ code: "custom", message: "Valor inválido (use 1.500,00)" });
+    return z.NEVER;
+  }
+  return normalized;
+}
+
+const moneyInput = z.string().transform(normalizeMoneyInput);
 
 /**
  * Formulário de atendimento. clientId presente => atualiza cliente existente;
@@ -10,8 +21,8 @@ export const atenderSchema = z
   .object({
     clientId: z.string().uuid().optional().or(z.literal("")),
     clientName: z.string().optional().or(z.literal("")),
-    monthlyIncome: decimalString.optional().or(z.literal("")),
-    monthlyAvailableAmount: decimalString.refine(
+    monthlyIncome: moneyInput.optional().or(z.literal("")),
+    monthlyAvailableAmount: moneyInput.refine(
       (v) => Number(v) > 0,
       "Disponível deve ser maior que zero",
     ),
@@ -23,8 +34,8 @@ export const atenderSchema = z
       .or(z.literal("")),
   })
   .superRefine((data, ctx) => {
-    if (!data.clientId && (data.clientName ?? "").trim().length < 2) {
-      ctx.addIssue({ code: "custom", path: ["clientName"], message: "Nome muito curto" });
+    if (!data.clientId) {
+      ctx.addIssue({ code: "custom", path: ["clientName"], message: "Selecione um cliente cadastrado" });
     }
   });
 

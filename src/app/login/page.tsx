@@ -110,8 +110,11 @@ export default function LoginPage() {
                 fecha o <span className="text-primary">consórcio certo</span>.
               </h1>
               <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-                Planos elegíveis ranqueados, reajustes IGP-M/IPCA e comparação
-                com investimentos — tudo na hora do atendimento.
+                Plano elegíveis ranqueados
+                <br />
+                Reajustes IGP-M/IPCA
+                <br />
+                Comparativos de mercado
               </p>
             </div>
 

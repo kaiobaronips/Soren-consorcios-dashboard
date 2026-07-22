@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { searchClientsAction } from "@/features/clients/actions";
 import type { Client } from "@/repositories/clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
 import { OperationalPageHeader } from "@/components/operational/enterprise-ui";
 import type { ProjectedRates } from "@/domain/financial-calculations";
 import type { FinancialIndex } from "@/repositories/indexes";
@@ -30,6 +30,72 @@ const TERMS = [
   { value: "240", label: "240 meses" },
 ];
 
+function formatMoney(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 12);
+  if (!digits) return "";
+  const cents = digits.padStart(3, "0");
+  const integer = cents.slice(0, -2).replace(/^0+(?=\d)/, "");
+  const decimal = cents.slice(-2);
+  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${decimal}`;
+}
+
+function EnterpriseSelect({
+  id,
+  name,
+  value,
+  options,
+  onValueChange,
+}: {
+  id: string;
+  name: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onValueChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <div className="enterprise-select">
+      <input type="hidden" name={name} value={value} />
+      <button
+        id={id}
+        type="button"
+        className="enterprise-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        onBlur={(event) => {
+          if (!event.currentTarget.parentElement?.contains(event.relatedTarget)) setOpen(false);
+        }}
+      >
+        <span>{selected.label}</span>
+        <ChevronDown className="enterprise-select-chevron" aria-hidden />
+      </button>
+      {open && (
+        <div className="enterprise-select-menu" role="listbox" aria-labelledby={id} tabIndex={-1}>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              className="enterprise-select-option"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onValueChange(option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AtendimentoForm({
   indexes,
   projectedRates,
@@ -49,6 +115,8 @@ export function AtendimentoForm({
   const [selected, setSelected] = useState<Client | null>(null);
   const [income, setIncome] = useState("");
   const [available, setAvailable] = useState("");
+  const [desiredCategory, setDesiredCategory] = useState("all");
+  const [desiredTermMonths, setDesiredTermMonths] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -69,8 +137,8 @@ export function AtendimentoForm({
     setSelected(client);
     setQuery(client.name);
     setShowDropdown(false);
-    setIncome(client.monthlyIncome ?? "");
-    setAvailable(client.monthlyAvailableAmount ?? "");
+    setIncome(formatMoney(client.monthlyIncome ?? ""));
+    setAvailable(formatMoney(client.monthlyAvailableAmount ?? ""));
   }
 
   function clearSelection() {
@@ -88,11 +156,11 @@ export function AtendimentoForm({
           <Input
             id="clientName"
             name="clientName"
-            placeholder="Buscar cliente existente ou digitar nome novo..."
+            placeholder="Buscar cliente / Digitar nome"
             autoComplete="off"
             value={query}
             disabled={!!selected}
-            className={inputClassName}
+            className={cn(inputClassName, presentation === "side-panel" && "enterprise-client-search-input")}
             onChange={(e) => {
               setQuery(e.target.value);
               setShowDropdown(true);
@@ -116,21 +184,16 @@ export function AtendimentoForm({
                 <button
                   key={c.id}
                   type="button"
-                  className="block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] transition-colors hover:bg-accent hover:text-accent-foreground"
                   onClick={() => selectClient(c)}
                 >
                   {c.name}
-                  {c.email && <span className="ml-2 text-xs text-muted-foreground">{c.email}</span>}
                 </button>
               ))}
-              {query.trim().length >= 2 && (
-                <button
-                  type="button"
-                  className="block w-full border-t px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={() => setShowDropdown(false)}
-                >
-                  Criar novo cliente “{query}”
-                </button>
+              {visibleResults.length === 0 && (
+                <p className="px-3 py-2 text-[11px] text-[#6f6f6f]">
+                  Nenhum cliente encontrado.
+                </p>
               )}
             </div>
           )}
@@ -144,10 +207,11 @@ export function AtendimentoForm({
           <Input
             id="monthlyIncome"
             name="monthlyIncome"
-            placeholder="5000.00"
+            placeholder="3.000,00"
             value={income}
             className={inputClassName}
-            onChange={(e) => setIncome(e.target.value)}
+            inputMode="numeric"
+            onChange={(e) => setIncome(formatMoney(e.target.value))}
           />
         </div>
         <div className="space-y-1.5">
@@ -155,11 +219,12 @@ export function AtendimentoForm({
           <Input
             id="monthlyAvailableAmount"
             name="monthlyAvailableAmount"
-            placeholder="1500.00"
+            placeholder="1.500,00"
             required
             value={available}
             className={inputClassName}
-            onChange={(e) => setAvailable(e.target.value)}
+            inputMode="numeric"
+            onChange={(e) => setAvailable(formatMoney(e.target.value))}
           />
         </div>
       </div>
@@ -167,29 +232,23 @@ export function AtendimentoForm({
       <div className={cn("grid grid-cols-1 gap-4", presentation === "page" && "sm:grid-cols-2")}>
         <div className="space-y-1.5">
           <Label htmlFor="desiredCategory">Categoria</Label>
-          <NativeSelect
+          <EnterpriseSelect
             id="desiredCategory"
             name="desiredCategory"
-            defaultValue="all"
-            className={inputClassName}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </NativeSelect>
+            value={desiredCategory}
+            options={CATEGORIES}
+            onValueChange={setDesiredCategory}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="desiredTermMonths">Prazo desejado</Label>
-          <NativeSelect
+          <EnterpriseSelect
             id="desiredTermMonths"
             name="desiredTermMonths"
-            defaultValue=""
-            className={inputClassName}
-          >
-            {TERMS.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </NativeSelect>
+            value={desiredTermMonths}
+            options={TERMS}
+            onValueChange={setDesiredTermMonths}
+          />
         </div>
       </div>
 
@@ -232,7 +291,7 @@ export function AtendimentoForm({
               <Button
                 type="submit"
                 disabled={pending}
-                className="enterprise-button enterprise-button-primary w-full rounded-sm px-4"
+                className="enterprise-button enterprise-button-primary enterprise-atendimento-submit w-full rounded-sm px-4"
               >
                 {pending ? "Calculando..." : "Consultar planos elegíveis"}
               </Button>

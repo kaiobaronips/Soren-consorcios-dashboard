@@ -3,7 +3,7 @@
 import Decimal from "decimal.js";
 import { revalidatePath } from "next/cache";
 import { getCurrentProfile } from "@/repositories/profiles";
-import { getClient, insertClient, updateClientFinancials } from "@/repositories/clients";
+import { getClient, updateClientFinancials } from "@/repositories/clients";
 import { listProducts } from "@/repositories/products";
 import { logAudit } from "@/repositories/audit";
 import { basisInstallment } from "@/domain/eligibility";
@@ -58,8 +58,8 @@ export async function atender(_prev: AtenderState | undefined, formData: FormDat
   const monthlyAvailableAmount = d.monthlyAvailableAmount;
   const desiredTermMonths = d.desiredTermMonths ? Number(d.desiredTermMonths) : null;
 
-  let clientId = d.clientId || "";
-  let clientName = (d.clientName || "").trim();
+  const clientId = d.clientId || "";
+  let clientName = "";
 
   if (clientId) {
     const before = await getClient(clientId);
@@ -76,14 +76,6 @@ export async function atender(_prev: AtenderState | undefined, formData: FormDat
       newState: { monthlyIncome, monthlyAvailableAmount },
     });
     clientName = before.name;
-  } else {
-    clientId = await insertClient({ name: clientName, monthlyIncome, monthlyAvailableAmount });
-    await logAudit({
-      action: "client.create",
-      entityType: "clients",
-      entityId: clientId,
-      newState: { name: clientName, monthlyIncome, monthlyAvailableAmount },
-    });
   }
 
   const result = await runAtendimento({

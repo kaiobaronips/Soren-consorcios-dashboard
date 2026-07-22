@@ -53,18 +53,27 @@ function initials(name: string) {
 
 function getRouteSegments(pathname: string): string[] {
   const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return ["Operações", "visao-geral"];
-  const labels: Record<string, string> = {
-    atendimento: "Atendimento",
-    clientes: "Clientes",
-    produtos: "Produtos",
-    inventario: "Inventário",
-    analytics: "Analytics",
-    relatorios: "Relatórios",
-    "base-produtos": "Base de produtos",
-    configuracoes: "Configurações",
+  if (segments.length === 0) return ["Operações", "Visão geral"];
+
+  const routeLabels: Record<string, { section: string; page: string }> = {
+    atendimento: { section: "Atendimento", page: "Novo Atendimento" },
+    clientes: { section: "Clientes", page: "Lista de clientes" },
+    produtos: { section: "Produtos", page: "Catálogo de produtos" },
+    inventario: { section: "Inventário", page: "Stats" },
+    analytics: { section: "Analytics", page: "Dashboards" },
+    relatorios: { section: "Relatórios", page: "Relatório detalhado" },
+    "base-produtos": { section: "Base de produtos", page: "Uploads" },
+    configuracoes: { section: "Configurações", page: "Preferências" },
   };
-  return segments.map((segment, index) => labels[segment] ?? (index === segments.length - 1 ? segment : segment.replace(/-/g, " ")));
+
+  const [sectionSegment, ...childSegments] = segments;
+  const route = routeLabels[sectionSegment];
+  const section = route?.section ?? sectionSegment.replace(/-/g, " ");
+  const page = childSegments.length > 0
+    ? childSegments[childSegments.length - 1].replace(/-/g, " ")
+    : route?.page;
+
+  return page ? [section, page] : [section];
 }
 
 function IconButton({ label, children, className, ...props }: React.ComponentProps<typeof Button> & { label: string }) {

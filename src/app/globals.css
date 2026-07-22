@@ -324,16 +324,33 @@
 .enterprise-side-panel-body { min-height: 0; flex: 1; overflow-y: auto; padding: 20px; }
 .enterprise-side-panel-footer { display: flex; flex: 0 0 auto; flex-direction: row; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--enterprise-border); background: #f8f8f8; padding: 12px 20px; }
 .enterprise-atendimento-layout { display: flex; min-height: calc(100dvh - 80px); margin: -24px; }
-.enterprise-atendimento-panel { width: 368px; flex: 0 0 368px; border-right: 1px solid var(--enterprise-border); background: #fff; }
+.enterprise-atendimento-panel { width: 230px; min-width: 230px; max-width: 230px; flex: 0 0 230px; border-right: 1px solid var(--enterprise-border); background: #fff; }
 .enterprise-atendimento-panel form { min-height: calc(100dvh - 80px); }
 .enterprise-atendimento-panel-header { border-bottom: 1px solid var(--enterprise-border); padding: 18px 20px; }
 .enterprise-atendimento-panel-title { margin: 0; color: var(--enterprise-text); font-size: 24px; font-weight: 400; line-height: 32px; letter-spacing: 0; }
 .enterprise-atendimento-panel-description { margin: 6px 0 0; color: var(--enterprise-text-secondary); font-size: 13px; line-height: 18px; }
-.enterprise-atendimento-panel-body { min-height: 0; flex: 1; overflow-y: auto; padding: 18px 20px; }
-.enterprise-atendimento-panel-footer { border-top: 1px solid var(--enterprise-border); background: #f8f8f8; padding: 12px 20px; }
+.enterprise-atendimento-panel-body { min-height: 0; flex: 1; overflow-y: auto; padding: 16px; }
+.enterprise-atendimento-panel-footer { border-top: 1px solid var(--enterprise-border); background: #f8f8f8; padding: 12px 16px; }
+.enterprise-atendimento-submit { font-size: 13px !important; line-height: 18px !important; }
+.enterprise-atendimento-panel .enterprise-field-input { height: 34px; min-height: 34px; padding-inline: 9px; font-size: 12px; }
+.enterprise-atendimento-panel .enterprise-select-trigger { height: 34px; font-size: 12px; padding-inline: 9px; }
+.enterprise-atendimento-panel .enterprise-select-option { min-height: 32px; font-size: 12px; padding-inline: 9px; }
+.enterprise-atendimento-panel .enterprise-select-option[aria-selected="true"] { padding-left: 6px; }
 .enterprise-field-label { color: var(--enterprise-text); font-size: 12px; font-weight: 500; line-height: 16px; }
 .enterprise-field-input { height: 40px; border-radius: 0; border-color: var(--enterprise-border-strong); background: #fff; font-size: 13px; }
+.enterprise-client-search-input { font-size: 12px; }
+.enterprise-client-search-input::placeholder { font-size: 12px; }
 .enterprise-field-input:focus-visible { border-color: var(--enterprise-blue); box-shadow: none; outline: 2px solid var(--enterprise-blue); outline-offset: -1px; }
+.enterprise-select { position: relative; }
+.enterprise-select-trigger { display: flex; width: 100%; height: 40px; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--enterprise-border-strong); border-radius: 0; background: #fff; color: var(--enterprise-text); padding: 0 11px; font-size: 13px; line-height: 18px; text-align: left; }
+.enterprise-select-trigger:hover { background: #f8f8f8; }
+.enterprise-select-trigger:focus-visible { border-color: var(--enterprise-blue); outline: 2px solid var(--enterprise-blue); outline-offset: -1px; }
+.enterprise-select-chevron { width: 16px; height: 16px; flex: 0 0 auto; color: var(--enterprise-text-muted); }
+.enterprise-select-menu { position: absolute; inset: calc(100% + 4px) 0 auto 0; z-index: 35; border: 1px solid var(--enterprise-border-strong); background: #fff; box-shadow: none; }
+.enterprise-select-option { display: flex; width: 100%; min-height: 36px; align-items: center; border: 0; border-bottom: 1px solid var(--enterprise-border); background: #fff; color: var(--enterprise-text); padding: 0 11px; font-size: 13px; line-height: 18px; text-align: left; }
+.enterprise-select-option:last-child { border-bottom: 0; }
+.enterprise-select-option:hover { background: #f4f4f4; }
+.enterprise-select-option[aria-selected="true"] { border-left: 3px solid var(--enterprise-blue); background: #edf5ff; color: #0043ce; padding-left: 8px; }
 .enterprise-tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--enterprise-border-strong); }
 .enterprise-tab { height: 40px; min-width: max-content; border: 0; border-right: 1px solid var(--enterprise-border-strong); background: #fff; padding: 0 18px; color: var(--enterprise-text-secondary); font-size: 14px; }
 .enterprise-tab:hover { background: #f4f4f4; color: var(--enterprise-text); }
