@@ -304,8 +304,10 @@
 .enterprise-page-title { margin: 0; color: var(--enterprise-text); font-size: 32px; font-weight: 400; line-height: 40px; letter-spacing: 0; }
 .enterprise-page-description { max-width: 680px; margin: 6px 0 0; color: var(--enterprise-text-secondary); font-size: 14px; line-height: 20px; }
 .enterprise-button { height: 40px; border-radius: 2px; box-shadow: none; }
+.enterprise-button-compact { height: 20px !important; min-width: 52px !important; min-height: 20px !important; padding: 0 8px !important; font-size: 9px !important; line-height: 12px !important; }
 .enterprise-button-primary { background: var(--enterprise-blue); color: #fff; }
 .enterprise-button-primary:hover { background: var(--enterprise-blue-hover); }
+.enterprise-button-compact.enterprise-button-primary:hover { background: var(--enterprise-blue-hover); border-color: var(--enterprise-blue-hover); color: #fff; }
 .enterprise-button-secondary { border: 1px solid var(--enterprise-border-strong); background: #fff; color: var(--enterprise-text); }
 .enterprise-modal { display: flex; flex-direction: column; border: 1px solid var(--enterprise-border-strong); border-radius: 2px; background: #fff; color: var(--enterprise-text); box-shadow: none; }
 .enterprise-modal-header { border-bottom: 1px solid var(--enterprise-border); padding: 16px 20px; }

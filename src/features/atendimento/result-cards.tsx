@@ -1,44 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import type { EligibilityBasis } from "@/domain/eligibility";
-import type { RankedProduct, RankingHighlights } from "@/domain/recommendation";
+import type { RankedProduct } from "@/domain/recommendation";
 import type { ProjectedRates } from "@/domain/financial-calculations";
 import type { FinancialIndex } from "@/repositories/indexes";
 import { SimulationPanel } from "@/features/simulations/simulation-panel";
 
 const CATEGORY_LABEL: Record<string, string> = { property: "Imóvel", vehicle: "Veículo", other: "Outros" };
-const CATEGORY_FILTERS = [
-  { value: "all", label: "Todas" },
-  { value: "property", label: "Imóvel" },
-  { value: "vehicle", label: "Veículo" },
-  { value: "other", label: "Outros" },
-];
-
-function highlightBadges(id: string, highlights: RankingHighlights): string[] {
-  const labels: string[] = [];
-  if (highlights.biggestCredit === id) labels.push("Maior carta");
-  if (highlights.lowestInstallment === id) labels.push("Menor parcela");
-  if (highlights.shortestTerm === id) labels.push("Menor prazo");
-  if (highlights.lowestFee === id) labels.push("Menor taxa");
-  if (highlights.bestBalance === id) labels.push("Melhor equilíbrio");
-  return labels;
-}
-
-function installmentLabel(basis: EligibilityBasis): string {
-  if (basis === "first") return "Parcela 1ª–12ª usada na elegibilidade";
-  if (basis === "max") return "Maior parcela usada na elegibilidade";
-  return "Parcela recorrente usada na elegibilidade";
-}
 
 export function ResultCards({
   ranked,
-  highlights,
-  basis,
   catalogMinInstallment,
   clientId,
   monthlyAvailableAmount,
@@ -48,8 +19,6 @@ export function ResultCards({
   canEditRate,
 }: {
   ranked: RankedProduct[];
-  highlights: RankingHighlights;
-  basis: EligibilityBasis;
   catalogMinInstallment?: string | null;
   clientId: string;
   monthlyAvailableAmount: string;
@@ -58,150 +27,99 @@ export function ResultCards({
   projectedRates: ProjectedRates;
   canEditRate: boolean;
 }) {
-  const [onlyCompatible, setOnlyCompatible] = useState(false);
-  const [category, setCategory] = useState("all");
-
-  const filtered = useMemo(() => {
-    return ranked.filter((item) => {
-      if (onlyCompatible && item.classification !== "compatible") return false;
-      if (category !== "all" && item.product.category !== category) return false;
-      return true;
-    });
-  }, [ranked, onlyCompatible, category]);
-
   if (ranked.length === 0) {
     return (
-      <Card>
-        <CardContent className="space-y-2 py-8 text-center">
-          <p className="font-medium">Nenhum plano cabe no valor informado</p>
-          {catalogMinInstallment && (
-            <p className="text-sm text-muted-foreground">
-              Menor parcela do catálogo: {formatCurrency(catalogMinInstallment)}
-            </p>
+      <section className="enterprise-card" data-slot="card">
+        <header className="enterprise-card-header">
+          <h2 className="enterprise-card-title">Nenhum plano cabe no valor informado</h2>
+        </header>
+        <div className="enterprise-card-content text-sm text-[color:var(--enterprise-text-secondary)]">
+          {catalogMinInstallment ? (
+            <p>Menor parcela do catálogo: {formatCurrency(catalogMinInstallment)}</p>
+          ) : (
+            <p>Não há planos elegíveis para os dados informados.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant={onlyCompatible ? "default" : "outline"}
-          onClick={() => setOnlyCompatible((v) => !v)}
-        >
-          Apenas totalmente compatíveis
-        </Button>
-        <div className="flex gap-1" role="group" aria-label="Categoria">
-          {CATEGORY_FILTERS.map((c) => (
-            <Button
-              key={c.value}
-              size="sm"
-              variant={category === c.value ? "default" : "outline"}
-              onClick={() => setCategory(c.value)}
-            >
-              {c.label}
-            </Button>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">{filtered.length} de {ranked.length} plano(s)</p>
-      </div>
+    <section aria-label="Planos encontrados">
+      <ul className="grid gap-2">
+        {ranked.map((item) => {
+          const details = [
+            ["Prazo", `${item.product.termMonths} meses`],
+            [
+              "Parcela 1ª–12ª",
+              item.product.first12InstallmentAmount
+                ? formatCurrency(item.product.first12InstallmentAmount)
+                : "—",
+            ],
+            ["Parcela recorrente", formatCurrency(item.product.regularInstallmentAmount)],
+            ["Taxa adm. total", formatPercent(item.product.totalAdministrationFeePercent)],
+            ["Índice", item.product.correctionIndex],
+            ["Folga mensal", formatCurrency(item.monthlySlack)],
+          ];
 
-      {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Nenhum plano corresponde aos filtros selecionados.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item, index) => {
-            const rankIndex = ranked.indexOf(item);
-            const badges = highlightBadges(item.product.id, highlights);
-            return (
-              <Card
-                key={item.product.id}
-                className="animate-fade-up transition-shadow hover:shadow-md"
-                style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
-              >
-                <CardHeader>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {rankIndex === 0 && <Badge>Plano recomendado</Badge>}
-                    <Badge
-                      variant={item.classification === "compatible" ? "success" : "warning"}
-                    >
-                      {item.classification === "compatible" ? "Compatível" : "Atenção: 1ª–12ª acima do disponível"}
-                    </Badge>
-                    {badges.map((b) => (
-                      <Badge key={b} variant="outline">{b}</Badge>
-                    ))}
-                  </div>
-                  <CardTitle className="pt-1">{item.product.productName}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {item.product.administratorName} · {CATEGORY_LABEL[item.product.category]}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="font-heading text-3xl font-semibold tabular-nums">
-                    {formatCurrency(item.product.creditAmount)}
-                  </p>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm [&_dd]:tabular-nums">
-                    <dt className="text-muted-foreground">Prazo</dt>
-                    <dd>{item.product.termMonths} meses</dd>
-                    <dt className="text-muted-foreground">Parcela 1ª–12ª</dt>
-                    <dd>
-                      {item.product.first12InstallmentAmount
-                        ? formatCurrency(item.product.first12InstallmentAmount)
-                        : "—"}
+          return (
+            <li
+              key={item.product.id}
+              data-slot="plan-item"
+              className="grid min-w-0 gap-px border border-[color:var(--enterprise-border)] bg-[color:var(--enterprise-border)] lg:grid-cols-[minmax(190px,1.1fr)_minmax(175px,0.8fr)_minmax(0,2.4fr)_auto]"
+            >
+              <div className="min-w-0 bg-[color:var(--enterprise-surface)] px-4 py-4">
+                <h3 className="text-base font-medium leading-5 text-[color:var(--enterprise-text)]">
+                  {item.product.productName}
+                </h3>
+                <p className="mt-1 text-sm leading-5 text-[color:var(--enterprise-text-secondary)]">
+                  {item.product.administratorName}
+                </p>
+                <p className="mt-1 text-xs leading-4 text-[color:var(--enterprise-text-muted)]">
+                  {CATEGORY_LABEL[item.product.category]}
+                </p>
+              </div>
+
+              <div className="bg-[color:var(--enterprise-surface-subtle)] px-4 py-4">
+                <p className="text-xs font-medium leading-4 text-[color:var(--enterprise-text-secondary)]">
+                  Valor da carta
+                </p>
+                <p className="mt-1 whitespace-nowrap text-lg font-normal leading-6 text-[color:var(--enterprise-text)] tabular-nums">
+                  {formatCurrency(item.product.creditAmount)}
+                </p>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-px bg-[color:var(--enterprise-border)] text-sm sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+                {details.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="min-w-0 bg-[color:var(--enterprise-surface)] px-3 py-2.5"
+                  >
+                    <dt className="text-xs leading-4 text-[color:var(--enterprise-text-secondary)]">
+                      {label}
+                    </dt>
+                    <dd className="mt-1 truncate leading-5 text-[color:var(--enterprise-text)] tabular-nums" title={value}>
+                      {value}
                     </dd>
-                    <dt className="text-muted-foreground">Parcela recorrente</dt>
-                    <dd>{formatCurrency(item.product.regularInstallmentAmount)}</dd>
-                    <dt className="text-muted-foreground">Taxa adm. total</dt>
-                    <dd>{formatPercent(item.product.totalAdministrationFeePercent)}</dd>
-                    <dt className="text-muted-foreground">Índice</dt>
-                    <dd>{item.product.correctionIndex}</dd>
-                    <dt className="text-muted-foreground">Folga mensal</dt>
-                    <dd>{formatCurrency(item.monthlySlack)}</dd>
-                    {item.incomeCommitmentPercent && (
-                      <>
-                        <dt className="text-muted-foreground">Comprometimento</dt>
-                        <dd>{formatPercent(item.incomeCommitmentPercent)}</dd>
-                      </>
-                    )}
-                  </dl>
-                  <details className="group rounded-lg border bg-muted/40 px-3 py-2 text-sm">
-                    <summary className="cursor-pointer font-medium text-muted-foreground transition-colors select-none group-open:text-foreground">
-                      Por que este plano?
-                    </summary>
-                    <p className="mt-2 text-xs text-muted-foreground">{installmentLabel(basis)}</p>
-                    <ul className="mt-1 list-inside list-disc space-y-0.5">
-                      {item.reasons.map((r) => (
-                        <li key={r.label}>
-                          {r.label}: {r.points.toFixed(1)} pt(s)
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-2 text-xs font-medium">Pontuação total: {item.score.toFixed(1)}</p>
-                  </details>
-                  <div className="flex justify-end pt-1">
-                    <SimulationPanel
-                      product={item.product}
-                      clientId={clientId}
-                      monthlyAvailableAmount={monthlyAvailableAmount}
-                      monthlyIncome={monthlyIncome}
-                      indexes={indexes}
-                      projectedRates={projectedRates}
-                      canEditRate={canEditRate}
-                    />
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                ))}
+              </dl>
+
+              <div className="flex items-center justify-end bg-[color:var(--enterprise-surface-subtle)] p-3">
+                <SimulationPanel
+                  product={item.product}
+                  clientId={clientId}
+                  monthlyAvailableAmount={monthlyAvailableAmount}
+                  monthlyIncome={monthlyIncome}
+                  indexes={indexes}
+                  projectedRates={projectedRates}
+                  canEditRate={canEditRate}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

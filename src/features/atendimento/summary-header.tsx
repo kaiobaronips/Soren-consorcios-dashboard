@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { LiveBar } from "@/components/ui/live-bar";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -18,14 +16,14 @@ function Stat({
   children?: React.ReactNode;
 }) {
   return (
-    <div>
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+    <div className="min-w-0 border-b border-r border-[color:var(--enterprise-border)] bg-[color:var(--enterprise-surface)] p-4">
+      <p className="text-xs font-medium leading-4 text-[color:var(--enterprise-text-secondary)]">
         {label}
       </p>
       <p
         className={cn(
-          "text-lg font-semibold tabular-nums",
-          hero && "font-heading text-2xl text-primary",
+          "mt-2 text-xl font-normal leading-7 text-[color:var(--enterprise-text)] tabular-nums",
+          hero && "text-2xl text-[color:var(--enterprise-blue)]",
         )}
       >
         {value}
@@ -42,55 +40,51 @@ export function SummaryHeader({ result, client }: { result: AtendimentoResult; c
     : null;
 
   return (
-    <Card className="animate-fade-up">
-      <CardContent className="space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="font-heading text-2xl font-semibold">{client.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              Renda mensal: {client.monthlyIncome ? formatCurrency(client.monthlyIncome) : "não informada"}
-            </p>
-          </div>
-          <Badge variant="secondary">Regra: {result.basisLabel}</Badge>
-        </div>
-
-        {result.riskAlert && (
-          <p className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm font-medium text-warning-foreground">
-            {result.riskAlert}
+    <section className="enterprise-card overflow-hidden" data-slot="card" aria-labelledby="atendimento-client-name">
+      <header className="enterprise-card-header items-start border-[#393939] bg-[#161616]">
+        <div className="min-w-0">
+          <h2 id="atendimento-client-name" className="text-lg font-normal leading-6 text-white">
+            {client.name}
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-white">
+            Renda mensal: {client.monthlyIncome ? formatCurrency(client.monthlyIncome) : "não informada"}
           </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
-          <Stat label="Disponível mensal" value={formatCurrency(client.monthlyAvailableAmount)} />
-          <Stat
-            label="Comprometimento da renda"
-            value={result.incomeCommitmentPercent ? formatPercent(result.incomeCommitmentPercent) : "—"}
-          >
-            {commitment !== null && (
-              <LiveBar
-                percent={commitment}
-                alert={Boolean(result.riskAlert)}
-                className="mt-2"
-              />
-            )}
-          </Stat>
-          <Stat label="Planos elegíveis" value={String(summary.eligibleCount)} />
-          <Stat
-            hero
-            label="Maior carta pagável"
-            value={summary.maxPayableCredit ? formatCurrency(summary.maxPayableCredit) : "—"}
-          />
-          <Stat
-            label="Menor parcela"
-            value={summary.minInstallment ? formatCurrency(summary.minInstallment) : "—"}
-          />
-          <Stat
-            label="Maior parcela compatível"
-            value={summary.maxCompatibleInstallment ? formatCurrency(summary.maxCompatibleInstallment) : "—"}
-          />
-          <Stat label="Melhor folga mensal" value={summary.bestSlack ? formatCurrency(summary.bestSlack) : "—"} />
         </div>
-      </CardContent>
-    </Card>
+        <span className="enterprise-status enterprise-status-neutral shrink-0">
+          Regra: {result.basisLabel}
+        </span>
+      </header>
+
+      <div className="-mb-px -mr-px grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
+        <Stat label="Disponível mensal" value={formatCurrency(client.monthlyAvailableAmount)} />
+        <Stat
+          label="Comprometimento da renda"
+          value={result.incomeCommitmentPercent ? formatPercent(result.incomeCommitmentPercent) : "—"}
+        >
+          {commitment !== null && (
+            <LiveBar
+              percent={commitment}
+              alert={Boolean(result.riskAlert)}
+              className="mt-2 rounded-none bg-[color:var(--enterprise-border)] [&>div]:rounded-none"
+            />
+          )}
+        </Stat>
+        <Stat label="Planos elegíveis" value={String(summary.eligibleCount)} />
+        <Stat
+          hero
+          label="Maior carta pagável"
+          value={summary.maxPayableCredit ? formatCurrency(summary.maxPayableCredit) : "—"}
+        />
+        <Stat
+          label="Menor parcela"
+          value={summary.minInstallment ? formatCurrency(summary.minInstallment) : "—"}
+        />
+        <Stat
+          label="Maior parcela compatível"
+          value={summary.maxCompatibleInstallment ? formatCurrency(summary.maxCompatibleInstallment) : "—"}
+        />
+        <Stat label="Melhor folga mensal" value={summary.bestSlack ? formatCurrency(summary.bestSlack) : "—"} />
+      </div>
+    </section>
   );
 }

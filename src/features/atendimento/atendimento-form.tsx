@@ -264,8 +264,6 @@ export function AtendimentoForm({
       <SummaryHeader result={state.result} client={state.client} />
       <ResultCards
         ranked={state.result.ranked}
-        highlights={state.result.highlights}
-        basis={state.result.basis}
         catalogMinInstallment={state.catalogMinInstallment}
         clientId={state.client.id}
         monthlyAvailableAmount={state.client.monthlyAvailableAmount}
@@ -300,16 +298,28 @@ export function AtendimentoForm({
 
         <section className="flex min-w-0 flex-1 flex-col p-6 lg:p-8">
           {resultsContent ?? (
-            <div
-              className="flex flex-1 select-none flex-col items-center justify-center text-center"
-              aria-hidden
-            >
-              <h2 className="text-3xl font-normal tracking-tight text-[color:var(--enterprise-text-muted)] lg:text-4xl">
-                Atendimento
-              </h2>
-              <p className="mt-3 max-w-md text-sm leading-6 text-[color:var(--enterprise-text-muted)]">
-                Consulte planos elegíveis e acompanhe o resultado da simulação
-              </p>
+            <div className="flex min-h-0 flex-1 select-none flex-col">
+              <div className="enterprise-card relative overflow-hidden px-5 py-4">
+                <h2 className="text-sm font-semibold leading-5 text-[#161616]">
+                  Nenhuma consulta executada
+                </h2>
+                <p className="mt-1.5 text-sm leading-5 text-[#6f6f6f]">
+                  Preencha os dados no painel lateral para calcular a elegibilidade dos produtos disponíveis.
+                </p>
+                <div className="absolute inset-x-0 bottom-0 h-px bg-[color:var(--enterprise-border)]" />
+              </div>
+
+              <div
+                className="flex flex-1 flex-col items-center justify-center text-center"
+                aria-hidden
+              >
+                <h2 className="text-3xl font-normal tracking-tight text-[color:var(--enterprise-text-muted)] lg:text-4xl">
+                  Atendimento
+                </h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-[color:var(--enterprise-text-muted)]">
+                  Consulte planos elegíveis e acompanhe o resultado da simulação
+                </p>
+              </div>
             </div>
           )}
         </section>

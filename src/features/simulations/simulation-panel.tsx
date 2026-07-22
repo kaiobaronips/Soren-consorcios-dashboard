@@ -218,7 +218,13 @@ export function SimulationPanel({
         }
       }}
     >
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Simular</DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="enterprise-button enterprise-button-compact enterprise-button-primary !h-5 !min-h-5 !min-w-[52px] !px-2 !text-[9px] !leading-3 rounded-sm border border-[color:var(--enterprise-blue)] font-medium" />
+        }
+      >
+        Simular
+      </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Simulação — {product.productName}</DialogTitle>
