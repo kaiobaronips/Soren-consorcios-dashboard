@@ -101,6 +101,10 @@ function classifyHeaderCell(cell: string): FieldKey | null {
   if (n.includes("parcela") || n.includes("mensal")) {
     if (/12|1a|primeira|reduzid/.test(n)) return "first12InstallmentAmount";
     if (/mensal|regular|demais/.test(n)) return "regularInstallmentAmount";
+    // Cabeçalho de parcela sem qualificador, mas limpo ("Parcela"/"Parcelas") → parcela
+    // regular (mensal). Fragmentos ruidosos (ex.: "parcelas)" numa referência) permanecem
+    // não mapeados para não roubar a coluna da parcela regular de verdade.
+    if (/^parcelas?$/.test(n)) return "regularInstallmentAmount";
     return null;
   }
   if (n.includes("prazo") || n.includes("meses")) return "termMonths";
