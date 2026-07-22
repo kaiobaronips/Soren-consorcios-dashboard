@@ -16,6 +16,9 @@ function baseRow(overrides: Partial<Row> = {}): Row {
     correction_index: "INCC",
     status: "active",
     is_demo: false,
+    source_document_id: null,
+    source_page: null,
+    extraction_confidence: null,
     ...overrides,
   };
 }
@@ -34,5 +37,16 @@ describe("toProduct", () => {
   it("preserva null em first_12_installment_amount sem converter para string", () => {
     const product = toProduct(baseRow({ first_12_installment_amount: null }));
     expect(product.first12InstallmentAmount).toBeNull();
+  });
+
+  it("normaliza campos de origem de PDF quando existirem", () => {
+    const product = toProduct(baseRow({
+      source_document_id: "doc-1",
+      source_page: 3,
+      extraction_confidence: 98.5,
+    }));
+    expect(product.sourceDocumentId).toBe("doc-1");
+    expect(product.sourcePage).toBe(3);
+    expect(product.extractionConfidence).toBe("98.50");
   });
 });

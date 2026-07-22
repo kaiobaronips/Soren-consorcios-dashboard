@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // Evita mismatch de hidratação: no servidor renderiza o ícone padrão,
 // no cliente (após hidratar) passa a refletir o tema resolvido.
@@ -16,7 +17,7 @@ function useMounted() {
   );
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useMounted();
 
@@ -28,7 +29,7 @@ export function ThemeToggle() {
       aria-label="Alternar tema"
       title="Alternar tema claro/escuro"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      className={cn("text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", className)}
     >
       {mounted && resolvedTheme === "dark" ? <Sun /> : <Moon />}
     </Button>

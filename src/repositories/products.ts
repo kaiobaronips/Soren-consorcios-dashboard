@@ -10,6 +10,7 @@ export type Product = {
   first12InstallmentAmount: string | null; regularInstallmentAmount: string;
   correctionIndex: "IGPM" | "IPCA" | "INCC" | "NONE" | "CUSTOM";
   status: "draft" | "active" | "inactive" | "archived"; isDemo: boolean;
+  sourceDocumentId: string | null; sourcePage: number | null; extractionConfidence: string | null;
 };
 
 export type ProductFilters = {
@@ -18,7 +19,7 @@ export type ProductFilters = {
   search?: string;
 };
 
-const COLUMNS = "id, product_name, product_code, administrator_name, category, credit_amount, term_months, total_administration_fee_percent, first_12_installment_amount, regular_installment_amount, correction_index, status, is_demo";
+const COLUMNS = "id, product_name, product_code, administrator_name, category, credit_amount, term_months, total_administration_fee_percent, first_12_installment_amount, regular_installment_amount, correction_index, status, is_demo, source_document_id, source_page, extraction_confidence";
 
 /**
  * PostgREST devolve colunas NUMERIC como number no JSON (perde zeros à direita).
@@ -31,6 +32,7 @@ export type Row = {
   total_administration_fee_percent: number; first_12_installment_amount: number | null;
   regular_installment_amount: number; correction_index: Product["correctionIndex"];
   status: Product["status"]; is_demo: boolean;
+  source_document_id: string | null; source_page: number | null; extraction_confidence: number | null;
 };
 
 export function toProduct(r: Row): Product {
@@ -45,6 +47,11 @@ export function toProduct(r: Row): Product {
       : new Decimal(r.first_12_installment_amount).toFixed(2),
     regularInstallmentAmount: new Decimal(r.regular_installment_amount).toFixed(2),
     correctionIndex: r.correction_index, status: r.status, isDemo: r.is_demo,
+    sourceDocumentId: r.source_document_id,
+    sourcePage: r.source_page,
+    extractionConfidence: r.extraction_confidence === null
+      ? null
+      : new Decimal(r.extraction_confidence).toFixed(2),
   };
 }
 

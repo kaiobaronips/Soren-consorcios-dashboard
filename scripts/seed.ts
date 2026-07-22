@@ -11,10 +11,8 @@ if (!url || !serviceKey) throw new Error("Configure NEXT_PUBLIC_SUPABASE_URL e S
 const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
 
 const USERS = [
-  { email: "admin@demo.soren.com.br", name: "Admin Demo", role: "admin" },
-  { email: "gestor@demo.soren.com.br", name: "Gestor Demo", role: "manager" },
-  { email: "ana@demo.soren.com.br", name: "Ana Consultora", role: "consultant" },
-  { email: "bruno@demo.soren.com.br", name: "Bruno Consultor", role: "consultant" },
+  { email: "admin@soren.com.br", name: "Admin Soren", role: "admin", password: "admin12345" },
+  { email: "felipeboim@soren.com.br", name: "Felipe Boim", role: "consultant", password: "boim12345" },
 ] as const;
 
 const SETTINGS: Record<string, unknown> = {
@@ -34,7 +32,7 @@ async function main() {
   for (const u of USERS) {
     const { data: created, error } = await admin.auth.admin.createUser({
       email: u.email,
-      password: "demo12345",
+      password: u.password,
       email_confirm: true,
     });
     // usuário já existe em re-execução → buscar id

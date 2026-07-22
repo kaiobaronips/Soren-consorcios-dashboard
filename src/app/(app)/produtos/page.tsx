@@ -1,6 +1,6 @@
 import { listProducts, type ProductFilters } from "@/repositories/products";
 import { getCurrentProfile } from "@/repositories/profiles";
-import { PageHeader } from "@/components/page-header";
+import { OperationalPageHeader } from "@/components/operational/enterprise-ui";
 import { ProductsFilters } from "@/features/products/products-filters";
 import { ProductsTable } from "@/features/products/products-table";
 import { ProductForm } from "@/features/products/product-form";
@@ -23,7 +23,10 @@ export default async function ProdutosPage({
   const canManage = profile.role !== "consultant";
   return (
     <div className="space-y-6">
-      <PageHeader action={canManage ? <ProductForm /> : undefined} />
+      <OperationalPageHeader
+        title="Produtos"
+        actions={canManage ? <ProductForm /> : undefined}
+      />
       <ProductsFilters current={params} />
       <ProductsTable products={products} canManage={canManage} />
     </div>

@@ -70,6 +70,8 @@ const ALL_FIELDS: FieldKey[] = [
   "first12InstallmentAmount",
 ];
 
+const CONTEXT_CONFIDENCE = 80;
+
 // Faixa Unicode das marcas diacríticas combinantes (acentos decompostos por NFD).
 const COMBINING_MARKS = /[̀-ͯ]/g;
 
@@ -117,6 +119,118 @@ function inferMapping(cells: string[]): ColumnMapping {
     if (field && mapping[field] === undefined) mapping[field] = index;
   });
   return mapping;
+}
+
+type DocumentContext = {
+  categoryLabel: string;
+  defaultTermMonths: number | null;
+  feeByTerm: Map<number, string>;
+};
+
+function inferCategoryLabel(lines: string[]): string {
+  const text = normalize(lines.join(" "));
+  if (/\b(auto|automovel|veiculo|carro|moto)\b/.test(text)) return "Veículo";
+  if (/\b(imovel|imobiliario|residencial)\b/.test(text)) return "Imóvel";
+  return "Produto";
+}
+
+function inferFirstTerm(lines: string[]): number | null {
+  for (const line of lines) {
+    const matches = line.matchAll(/\b(\d{2,3})\b/g);
+    for (const match of matches) {
+      const term = Number.parseInt(match[1]!, 10);
+      if (term >= 24 && term <= 600) return term;
+    }
+  }
+  return null;
+}
+
+function inferFeeByTerm(lines: string[]): Map<number, string> {
+  const fees = new Map<number, string>();
+  for (const line of lines) {
+    const matches = line.matchAll(/\b(\d{2,3})\s+(\d{1,3}(?:[.,]\d{1,3})?)\s*%/g);
+    for (const match of matches) {
+      const term = Number.parseInt(match[1]!, 10);
+      const fee = parseBrlPercent(match[2]!);
+      if (term >= 24 && term <= 600 && fee && !fees.has(term)) fees.set(term, fee);
+    }
+  }
+  return fees;
+}
+
+function inferDocumentContext(pages: PageText[]): DocumentContext {
+  const lines = pages.flatMap((page) => page.lines);
+  const feeByTerm = inferFeeByTerm(lines);
+  return {
+    categoryLabel: inferCategoryLabel(lines),
+    defaultTermMonths: inferFirstTerm(lines),
+    feeByTerm,
+  };
+}
+
+function withoutMissingColumnIssue(issues: string[], field: FieldKey): string[] {
+  const label = FIELD_LABELS[field];
+  return issues.filter((issue) => !issue.startsWith(`coluna ${label} não identificada`));
+}
+
+function recalculateConfidence(product: ExtractedProduct): ExtractedProduct {
+  const confidences = [
+    product.productName.confidence,
+    product.productCode.confidence,
+    product.creditAmount.confidence,
+    product.termMonths.confidence,
+    product.totalAdministrationFeePercent.confidence,
+    product.regularInstallmentAmount.confidence,
+    product.first12InstallmentAmount.confidence,
+  ];
+  return {
+    ...product,
+    overallConfidence: Math.round(confidences.reduce((sum, c) => sum + c, 0) / confidences.length),
+  };
+}
+
+function applyContextualDefaults(
+  product: ExtractedProduct,
+  context: DocumentContext,
+  pageHeaderLines: string[],
+): ExtractedProduct {
+  const term = product.termMonths.value ?? inferFirstTerm(pageHeaderLines) ?? context.defaultTermMonths;
+  const fee = product.totalAdministrationFeePercent.value
+    ?? (term ? context.feeByTerm.get(term) : undefined)
+    ?? context.feeByTerm.values().next().value
+    ?? null;
+  let next: ExtractedProduct = { ...product, issues: [...product.issues] };
+
+  if (next.termMonths.value === null && term !== null) {
+    next = {
+      ...next,
+      termMonths: { value: term, confidence: CONTEXT_CONFIDENCE, raw: String(term) },
+      issues: withoutMissingColumnIssue(next.issues, "termMonths"),
+    };
+  }
+
+  if (next.totalAdministrationFeePercent.value === null && fee !== null) {
+    next = {
+      ...next,
+      totalAdministrationFeePercent: { value: fee, confidence: CONTEXT_CONFIDENCE, raw: fee },
+      issues: withoutMissingColumnIssue(next.issues, "totalAdministrationFeePercent"),
+    };
+  }
+
+  if (next.productName.value === null && next.productCode.value) {
+    const suffix = next.termMonths.value ? ` - ${next.termMonths.value}m` : "";
+    next = {
+      ...next,
+      productName: {
+        value: `${context.categoryLabel} ${next.productCode.value}${suffix}`,
+        confidence: CONTEXT_CONFIDENCE,
+        raw: null,
+      },
+      issues: withoutMissingColumnIssue(next.issues, "productName"),
+    };
+  }
+
+  return recalculateConfidence(next);
 }
 
 /** Uma linha é cabeçalho se casa ≥2 campos distintos e quase não tem valores monetários. */
@@ -281,6 +395,7 @@ export function extractProductsFromText(
 ): { products: ExtractedProduct[]; log: string[] } {
   const products: ExtractedProduct[] = [];
   const log: string[] = [];
+  const documentContext = inferDocumentContext(pages);
   const manualFields = new Set<FieldKey>(
     manualMapping ? (Object.keys(manualMapping) as FieldKey[]) : [],
   );
@@ -307,7 +422,8 @@ export function extractProductsFromText(
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const cells = splitCells(lines[i]);
       if (!isDataLine(cells)) continue;
-      products.push(extractProduct(page, cells, mapping, manualFields));
+      const product = extractProduct(page, cells, mapping, manualFields);
+      products.push(applyContextualDefaults(product, documentContext, lines.slice(0, headerIndex + 1)));
       count++;
     }
     log.push(`página ${page}: cabeçalho detectado na linha ${headerIndex + 1}, ${count} produto(s) extraído(s)`);

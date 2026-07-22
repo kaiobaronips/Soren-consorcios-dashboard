@@ -77,7 +77,11 @@ export function AtendimentoForm({
 
   return (
     <div className="space-y-6">
-      <form action={action} className="space-y-5 rounded-xl border bg-card p-5 shadow-xs sm:p-6">
+      <form action={action} className="enterprise-form enterprise-card space-y-5 overflow-visible p-5 sm:p-6">
+        <div className="border-b border-[#e0e0e0] pb-4">
+          <h2 className="text-base font-medium text-[#161616]">Dados do atendimento</h2>
+          <p className="mt-1 text-sm text-[#525252]">Selecione um cliente existente ou inicie um novo cadastro.</p>
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="clientName">Cliente</Label>
           <div className="relative">
@@ -106,7 +110,7 @@ export function AtendimentoForm({
               </Button>
             )}
             {showDropdown && !selected && query.trim().length >= 2 && (
-              <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border bg-popover py-1 shadow-lg">
+              <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-sm border border-[#c6c6c6] bg-white py-1 shadow-none">
                 {visibleResults.map((c) => (
                   <button
                     key={c.id}
@@ -189,7 +193,7 @@ export function AtendimentoForm({
             {state.error}
           </p>
         )}
-        <Button type="submit" size="lg" disabled={pending}>
+        <Button type="submit" disabled={pending} className="enterprise-button enterprise-button-primary rounded-sm px-4">
           {pending ? "Calculando..." : "Consultar planos elegíveis"}
         </Button>
       </form>

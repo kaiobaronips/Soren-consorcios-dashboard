@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { Plus } from "lucide-react";
 
 const FIELDS: { name: string; label: string; placeholder?: string }[] = [
   { name: "productName", label: "Nome do produto", placeholder: "Imóvel XY 300 – 200m" },
@@ -33,7 +34,7 @@ export function ProductForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>Novo produto</Button>} />
+      <DialogTrigger render={<Button className="enterprise-button enterprise-button-primary rounded-sm px-4"><Plus aria-hidden /> Novo produto</Button>} />
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Cadastrar produto</DialogTitle></DialogHeader>
         <form action={action} className="space-y-3">

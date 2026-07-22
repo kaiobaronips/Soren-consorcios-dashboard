@@ -18,6 +18,9 @@ function baseProduct(overrides: Partial<Product> = {}): Product {
     correctionIndex: "IGPM",
     status: "active",
     isDemo: false,
+    sourceDocumentId: null,
+    sourcePage: null,
+    extractionConfidence: null,
     ...overrides,
   };
 }

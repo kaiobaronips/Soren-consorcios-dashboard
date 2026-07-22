@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
 
 const FIELDS: { name: string; label: string; placeholder?: string; required?: boolean }[] = [
   { name: "name", label: "Nome", placeholder: "Maria da Silva", required: true },
@@ -29,7 +30,7 @@ export function ClientForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>Novo cliente</Button>} />
+      <DialogTrigger render={<Button className="enterprise-button enterprise-button-primary rounded-sm px-4"><Plus aria-hidden /> Novo cliente</Button>} />
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Cadastrar cliente</DialogTitle></DialogHeader>
         <form action={action} className="space-y-3">

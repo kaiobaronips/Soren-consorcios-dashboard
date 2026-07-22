@@ -30,28 +30,31 @@ export function ProductsFilters({ current }: { current: { categoria?: string; st
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="enterprise-toolbar">
       <Input
         placeholder="Buscar por nome ou código..."
-        className="max-w-xs"
+        className="h-8 max-w-56 rounded-none border-[#d9d9d9] bg-white"
+        style={{ fontSize: "12px", lineHeight: "16px" }}
         defaultValue={current.busca ?? ""}
         onKeyDown={(e) => {
           if (e.key === "Enter") apply({ busca: e.currentTarget.value });
         }}
       />
-      <div className="flex gap-1" role="group" aria-label="Categoria">
+      <div className="flex overflow-hidden rounded-none border border-[#63aef7]" role="group" aria-label="Categoria">
         {CATEGORIES.map((c) => (
-          <Button key={c.value} size="sm"
-            variant={(current.categoria ?? "") === c.value ? "default" : "outline"}
+          <Button key={c.value}
+            className={`h-7 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.categoria ?? "") === c.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
+            style={{ fontSize: "12px", lineHeight: "16px" }}
             onClick={() => apply({ categoria: c.value })}>
             {c.label}
           </Button>
         ))}
       </div>
-      <div className="flex gap-1" role="group" aria-label="Status">
+      <div className="flex overflow-hidden rounded-none border border-[#63aef7]" role="group" aria-label="Status">
         {STATUSES.map((s) => (
-          <Button key={s.value} size="sm"
-            variant={(current.status ?? "") === s.value ? "default" : "outline"}
+          <Button key={s.value}
+            className={`h-7 !rounded-none border-0 border-r border-[#63aef7] px-2 last:border-r-0 ${(current.status ?? "") === s.value ? "bg-[#178df4] text-white hover:bg-[#0f62fe]" : "bg-white text-[#178df4] hover:bg-[#edf5ff]"}`}
+            style={{ fontSize: "12px", lineHeight: "16px" }}
             onClick={() => apply({ status: s.value })}>
             {s.label}
           </Button>
