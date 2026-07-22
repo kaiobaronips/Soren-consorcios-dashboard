@@ -29,7 +29,12 @@ export function UploadDropzone() {
       const res = await uploadDocumentAction(undefined, fd);
       if (res.error) collected.push({ fileName: file.name, status: "error", message: res.error });
       else if (res.duplicateOf) collected.push({ fileName: file.name, status: "duplicate", message: "Documento duplicado (ignorado)" });
-      else collected.push({ fileName: file.name, status: "ok", message: "Enviado" });
+      else if ((res.published ?? 0) > 0) collected.push({
+        fileName: file.name,
+        status: "ok",
+        message: `${res.published} produto(s) publicado(s)`,
+      });
+      else collected.push({ fileName: file.name, status: "ok", message: "Enviado para revisão" });
       setResults([...collected]);
     }
     router.refresh();

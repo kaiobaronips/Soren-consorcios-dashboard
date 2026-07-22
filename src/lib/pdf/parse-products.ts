@@ -100,7 +100,8 @@ function classifyHeaderCell(cell: string): FieldKey | null {
   // Parcelas primeiro: distinguir "1ª a 12ª" de "mensal/regular".
   if (n.includes("parcela") || n.includes("mensal")) {
     if (/12|1a|primeira|reduzid/.test(n)) return "first12InstallmentAmount";
-    return "regularInstallmentAmount";
+    if (/mensal|regular|demais/.test(n)) return "regularInstallmentAmount";
+    return null;
   }
   if (n.includes("prazo") || n.includes("meses")) return "termMonths";
   if (n.includes("taxa") || n.includes("adm")) return "totalAdministrationFeePercent";
@@ -163,9 +164,14 @@ function inferDocumentContext(pages: PageText[]): DocumentContext {
   const feeByTerm = inferFeeByTerm(lines);
   return {
     categoryLabel: inferCategoryLabel(lines),
-    defaultTermMonths: inferFirstTerm(lines),
+    defaultTermMonths: feeByTerm.keys().next().value ?? null,
     feeByTerm,
   };
+}
+
+function hasMissingColumnIssue(issues: string[], field: FieldKey): boolean {
+  const label = FIELD_LABELS[field];
+  return issues.some((issue) => issue.startsWith(`coluna ${label} não identificada`));
 }
 
 function withoutMissingColumnIssue(issues: string[], field: FieldKey): string[] {
@@ -201,7 +207,7 @@ function applyContextualDefaults(
     ?? null;
   let next: ExtractedProduct = { ...product, issues: [...product.issues] };
 
-  if (next.termMonths.value === null && term !== null) {
+  if (next.termMonths.value === null && term !== null && hasMissingColumnIssue(next.issues, "termMonths")) {
     next = {
       ...next,
       termMonths: { value: term, confidence: CONTEXT_CONFIDENCE, raw: String(term) },
@@ -209,7 +215,11 @@ function applyContextualDefaults(
     };
   }
 
-  if (next.totalAdministrationFeePercent.value === null && fee !== null) {
+  if (
+    next.totalAdministrationFeePercent.value === null
+    && fee !== null
+    && hasMissingColumnIssue(next.issues, "totalAdministrationFeePercent")
+  ) {
     next = {
       ...next,
       totalAdministrationFeePercent: { value: fee, confidence: CONTEXT_CONFIDENCE, raw: fee },
@@ -217,7 +227,11 @@ function applyContextualDefaults(
     };
   }
 
-  if (next.productName.value === null && next.productCode.value) {
+  if (
+    next.productName.value === null
+    && next.productCode.value
+    && hasMissingColumnIssue(next.issues, "productName")
+  ) {
     const suffix = next.termMonths.value ? ` - ${next.termMonths.value}m` : "";
     next = {
       ...next,

@@ -84,6 +84,37 @@ describe("extractProductsFromText", () => {
     expect(p.first12InstallmentAmount.value).toBe("3820.00");
   });
 
+  it("extrai tabela ampla com prazo e taxa no contexto do documento", () => {
+    const pages = [
+      {
+        page: 1,
+        lines: [
+          "Imóvel Tabela Parcelinha Antecipada",
+          "Cód.  Crédito Referência  parcelas)  1ª a 12ª Parcela  Demais Parcelas",
+          "IE600  600.000,00  7.200,00  3.820,00  3.220,00",
+        ],
+      },
+      {
+        page: 2,
+        lines: [
+          "Planos de Vendas",
+          "240  26,80%  28,00%  220  25,80%  27,00%",
+        ],
+      },
+    ];
+
+    const { products } = extractProductsFromText(pages);
+    expect(products).toHaveLength(1);
+    expect(products[0].productName.value).toBe("Imóvel IE600 - 240m");
+    expect(products[0].productCode.value).toBe("IE600");
+    expect(products[0].creditAmount.value).toBe("600000.00");
+    expect(products[0].termMonths.value).toBe(240);
+    expect(products[0].totalAdministrationFeePercent.value).toBe("26.800");
+    expect(products[0].first12InstallmentAmount.value).toBe("3820.00");
+    expect(products[0].regularInstallmentAmount.value).toBe("3220.00");
+    expect(products[0].issues).toHaveLength(0);
+  });
+
   it("(d) manualMapping corrige uma inferência errada", () => {
     // Duas colunas casam com "valor" — a inferência pega a primeira (Valor Bem), que é errada.
     const header = ["Produto", "Codigo", "Valor Bem", "Valor da Carta", "Prazo", "Taxa Adm Total", "Parcela 1a-12a", "Parcela Mensal"];

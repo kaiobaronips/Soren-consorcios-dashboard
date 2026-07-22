@@ -5,7 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/repositories/profiles";
-import { findDocumentByHash, insertDocument } from "@/repositories/documents";
+import { findDocumentByHash, insertDocument, updateDocumentStatus } from "@/repositories/documents";
 import { logAudit } from "@/repositories/audit";
 import { hasPdfMagicBytes, sanitizeFileName, sha256Hex } from "@/lib/pdf/upload-validation";
 import { processDocument } from "@/services/pdf-pipeline";
@@ -13,6 +13,8 @@ import type { ColumnMapping } from "@/lib/pdf/parse-products";
 import { parseBrlMoney, parseBrlPercent, parseIntSafe } from "@/lib/pdf/parse-values";
 import {
   getExtractedProduct,
+  listByDocument,
+  countExtractedProducts,
   setReviewStatus,
   updateField,
   type ExtractedFieldKey,
@@ -32,6 +34,8 @@ const BUCKET = "product-documents";
 export type UploadDocumentState = {
   error?: string;
   documentId?: string;
+  productsFound?: number;
+  published?: number;
   /** Preenchido quando o hash já existia: o documento não é reprocessado. */
   duplicateOf?: string;
 };
@@ -85,8 +89,21 @@ export async function uploadDocumentAction(
     newState: { fileName, storagePath, fileHash: hash },
   });
 
+  const processed = await processDocument(documentId);
+  const autoPublish = processed.status === "review_required"
+    ? await autoPublishDocumentProducts(documentId, { administratorName: fileName.replace(/\.pdf$/i, "") })
+    : { published: 0 };
+
+  await logAudit({
+    action: "document.auto_publish",
+    entityType: "product_documents",
+    entityId: documentId,
+    newState: { productsFound: processed.productsFound, published: autoPublish.published },
+  });
+
   revalidatePath("/base-produtos");
-  return { documentId };
+  revalidatePath("/produtos");
+  return { documentId, productsFound: processed.productsFound, published: autoPublish.published };
 }
 
 // Índice de coluna >= 0 por campo; sobrepõe a inferência do parser no reprocessamento.
@@ -112,12 +129,13 @@ export type ProcessDocumentInput = z.infer<typeof processDocumentSchema>;
 export type ProcessDocumentState = {
   error?: string;
   productsFound?: number;
-  status?: "review_required" | "failed";
+  published?: number;
+  status?: "review_required" | "completed" | "failed";
 };
 
 /**
- * Dispara o pipeline de extração de um documento já enviado (Task 4). Staff apenas.
- * NUNCA publica produtos: só gera a staging `extracted_products` para revisão humana.
+ * Dispara o pipeline de extração de um documento já enviado. Staff apenas.
+ * Produtos completos são publicados automaticamente; itens incompletos ficam em revisão.
  */
 export async function processDocumentAction(input: ProcessDocumentInput): Promise<ProcessDocumentState> {
   const profile = await getCurrentProfile();
@@ -130,14 +148,19 @@ export async function processDocumentAction(input: ProcessDocumentInput): Promis
 
   try {
     const result = await processDocument(documentId, manualMapping as ColumnMapping | undefined);
+    const autoPublish = result.status === "review_required"
+      ? await autoPublishDocumentProducts(documentId)
+      : { published: 0, pending: 0 };
+    const status = autoPublish.published > 0 && autoPublish.pending === 0 ? "completed" : result.status;
     await logAudit({
       action: "document.process",
       entityType: "product_documents",
       entityId: documentId,
-      newState: { productsFound: result.productsFound },
+      newState: { productsFound: result.productsFound, published: autoPublish.published },
     });
     revalidatePath("/base-produtos");
-    return { productsFound: result.productsFound, status: result.status };
+    revalidatePath("/produtos");
+    return { productsFound: result.productsFound, published: autoPublish.published, status };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao processar o documento";
     return { error: message };
@@ -353,14 +376,22 @@ type PublishOptions = {
   correctionIndex: Product["correctionIndex"];
 };
 
+type PublishOneOptions = { requireApproved?: boolean };
+
 /**
- * Publica UM candidato aprovado em consortium_products (§8).
- * Exige review_status='approved' (aprovação humana individual prévia — NUNCA automático).
- * Dedup pela chave da F2 → existente vira UPDATE (versionamento via auditoria); novo vira INSERT.
+ * Publica UM candidato em consortium_products.
+ * No fluxo manual exige review_status='approved'; no fluxo automático publica apenas
+ * candidatos completos validados pelo parser.
  */
-async function publishOne(record: ExtractedProductRecord, opts: PublishOptions): Promise<string> {
+async function publishOne(
+  record: ExtractedProductRecord,
+  opts: PublishOptions,
+  options: PublishOneOptions = { requireApproved: true },
+): Promise<string> {
   if (record.reviewStatus === "published") throw new Error("Produto já publicado");
-  if (record.reviewStatus !== "approved") throw new Error("Aprove o produto antes de publicar");
+  if (options.requireApproved !== false && record.reviewStatus !== "approved") {
+    throw new Error("Aprove o produto antes de publicar");
+  }
 
   const validationError = validateForPublish(record);
   if (validationError) throw new Error(validationError);
@@ -407,6 +438,59 @@ async function publishOne(record: ExtractedProductRecord, opts: PublishOptions):
 
   await setReviewStatus(record.id, "published", productId);
   return productId;
+}
+
+function isAutoPublishComplete(record: ExtractedProductRecord): boolean {
+  const required: ExtractedFieldKey[] = [
+    "productName",
+    "productCode",
+    "creditAmount",
+    "termMonths",
+    "totalAdministrationFeePercent",
+    "first12InstallmentAmount",
+    "regularInstallmentAmount",
+  ];
+  return required.every((field) => record[field].value !== null)
+    && /^[A-Za-z]+[A-Za-z0-9-]*\d+/.test(record.productCode.value ?? "");
+}
+
+function inferCategory(record: ExtractedProductRecord): Product["category"] {
+  const text = `${record.productName.value ?? ""} ${record.productCode.value ?? ""}`.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  if (/\b(auto|automovel|veiculo|carro|moto)\b/.test(text)) return "vehicle";
+  if (/\b(imovel|imobiliario|residencial)\b/.test(text) || /^ie/i.test(record.productCode.value ?? "")) return "property";
+  return "other";
+}
+
+function inferCorrectionIndex(category: Product["category"]): Product["correctionIndex"] {
+  return category === "property" ? "INCC" : "NONE";
+}
+
+async function autoPublishDocumentProducts(
+  documentId: string,
+  defaults: Partial<Pick<PublishOptions, "administratorName" | "correctionIndex">> = {},
+): Promise<{ published: number; pending: number }> {
+  const records = await listByDocument(documentId);
+  let published = 0;
+
+  for (const record of records) {
+    if (record.reviewStatus !== "pending_review" || !isAutoPublishComplete(record)) continue;
+    const category = inferCategory(record);
+    try {
+      await publishOne(record, {
+        category,
+        administratorName: defaults.administratorName?.trim() || "Upload PDF",
+        correctionIndex: defaults.correctionIndex ?? inferCorrectionIndex(category),
+      }, { requireApproved: false });
+      published++;
+    } catch {
+      // Produtos incompletos ou inválidos permanecem em revisão.
+    }
+  }
+
+  const pending = await countExtractedProducts(documentId, "pending_review");
+  if (published > 0 && pending === 0) await updateDocumentStatus(documentId, "completed", undefined, true);
+
+  return { published, pending };
 }
 
 const publishOptionsSchema = z.object({
