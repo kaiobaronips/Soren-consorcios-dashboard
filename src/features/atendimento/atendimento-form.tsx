@@ -7,7 +7,6 @@ import type { Client } from "@/repositories/clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { OperationalPageHeader } from "@/components/operational/enterprise-ui";
 import type { ProjectedRates } from "@/domain/financial-calculations";
 import type { FinancialIndex } from "@/repositories/indexes";
 import { cn } from "@/lib/utils";
@@ -299,22 +298,20 @@ export function AtendimentoForm({
           </form>
         </aside>
 
-        <section className="min-w-0 flex-1 p-6 lg:p-8">
-          <OperationalPageHeader
-            title="Atendimento"
-            description="Consulte planos elegíveis e acompanhe o resultado da simulação."
-          />
-
-          <div className="mt-6">
-            {resultsContent ?? (
-              <div className="enterprise-card p-5">
-                <p className="text-sm font-medium text-[#161616]">Nenhuma consulta executada</p>
-                <p className="mt-1 max-w-xl text-sm leading-5 text-[#525252]">
-                  Preencha os dados no painel lateral para calcular a elegibilidade dos produtos disponíveis.
-                </p>
-              </div>
-            )}
-          </div>
+        <section className="flex min-w-0 flex-1 flex-col p-6 lg:p-8">
+          {resultsContent ?? (
+            <div
+              className="flex flex-1 select-none flex-col items-center justify-center text-center"
+              aria-hidden
+            >
+              <h2 className="text-3xl font-normal tracking-tight text-[color:var(--enterprise-text-muted)] lg:text-4xl">
+                Atendimento
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-6 text-[color:var(--enterprise-text-muted)]">
+                Consulte planos elegíveis e acompanhe o resultado da simulação
+              </p>
+            </div>
+          )}
         </section>
       </div>
     );
