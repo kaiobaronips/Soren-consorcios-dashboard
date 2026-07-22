@@ -65,6 +65,7 @@ export async function runAtendimento(input: AtendimentoInput): Promise<Atendimen
     listProducts({
       status: "active",
       ...(input.desiredCategory === "all" ? {} : { category: input.desiredCategory }),
+      ...(input.desiredTermMonths === null ? {} : { termMonths: input.desiredTermMonths }),
     }),
     getOrgSettings(),
   ]);

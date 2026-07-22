@@ -29,9 +29,14 @@ export type AtenderState = {
 /** Menor parcela do catálogo ativo (na categoria filtrada), usada como dica no estado vazio. */
 async function catalogMinInstallment(
   desiredCategory: "all" | "property" | "vehicle" | "other",
+  desiredTermMonths: number | null,
 ): Promise<string | null> {
   const [products, settings] = await Promise.all([
-    listProducts({ status: "active", ...(desiredCategory === "all" ? {} : { category: desiredCategory }) }),
+    listProducts({
+      status: "active",
+      ...(desiredCategory === "all" ? {} : { category: desiredCategory }),
+      ...(desiredTermMonths === null ? {} : { termMonths: desiredTermMonths }),
+    }),
     getOrgSettings(),
   ]);
   if (products.length === 0) return null;
@@ -87,7 +92,9 @@ export async function atender(_prev: AtenderState | undefined, formData: FormDat
 
   revalidatePath("/clientes");
 
-  const hint = result.summary.eligibleCount === 0 ? await catalogMinInstallment(d.desiredCategory) : null;
+  const hint = result.summary.eligibleCount === 0
+    ? await catalogMinInstallment(d.desiredCategory, desiredTermMonths)
+    : null;
 
   return {
     result,

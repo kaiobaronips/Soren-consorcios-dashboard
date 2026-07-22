@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { atender } from "./actions";
 import { SummaryHeader } from "./summary-header";
 import { ResultCards } from "./result-cards";
+import {
+  SimulationPanel,
+  type SimulationPanelProduct,
+} from "@/features/simulations/simulation-panel";
 
 const CATEGORIES = [
   { value: "all", label: "Todas" },
@@ -116,6 +120,7 @@ export function AtendimentoForm({
   const [available, setAvailable] = useState("");
   const [desiredCategory, setDesiredCategory] = useState("all");
   const [desiredTermMonths, setDesiredTermMonths] = useState("");
+  const [simulationProduct, setSimulationProduct] = useState<SimulationPanelProduct | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -145,6 +150,11 @@ export function AtendimentoForm({
     setQuery("");
     setIncome("");
     setAvailable("");
+  }
+
+  function submitAtendimento(formData: FormData) {
+    setSimulationProduct(null);
+    action(formData);
   }
 
   const fields = (
@@ -259,18 +269,25 @@ export function AtendimentoForm({
     </>
   );
 
-  const resultsContent = state?.result && state?.client ? (
+  const resultsContent = state?.result && state?.client && simulationProduct ? (
+    <SimulationPanel
+      key={simulationProduct.id}
+      product={simulationProduct}
+      clientId={state.client.id}
+      monthlyAvailableAmount={state.client.monthlyAvailableAmount}
+      monthlyIncome={state.client.monthlyIncome}
+      indexes={indexes}
+      projectedRates={projectedRates}
+      canEditRate={canEditRate}
+      onBack={() => setSimulationProduct(null)}
+    />
+  ) : state?.result && state?.client ? (
     <div className="space-y-4">
       <SummaryHeader result={state.result} client={state.client} />
       <ResultCards
         ranked={state.result.ranked}
         catalogMinInstallment={state.catalogMinInstallment}
-        clientId={state.client.id}
-        monthlyAvailableAmount={state.client.monthlyAvailableAmount}
-        monthlyIncome={state.client.monthlyIncome}
-        indexes={indexes}
-        projectedRates={projectedRates}
-        canEditRate={canEditRate}
+        onSimulate={setSimulationProduct}
       />
     </div>
   ) : null;
@@ -279,7 +296,7 @@ export function AtendimentoForm({
     return (
       <div className="enterprise-atendimento-layout">
         <aside className="enterprise-atendimento-panel" aria-label="Formulário de atendimento">
-          <form action={action} className="enterprise-form flex min-h-full flex-col">
+          <form action={submitAtendimento} className="enterprise-form flex min-h-full flex-col">
             <div className="enterprise-atendimento-panel-body space-y-5">
               {fields}
             </div>
@@ -296,7 +313,7 @@ export function AtendimentoForm({
           </form>
         </aside>
 
-        <section className="flex min-w-0 flex-1 flex-col p-6 lg:p-8">
+        <section className="enterprise-atendimento-results flex min-w-0 flex-1 flex-col p-6 lg:p-8">
           {resultsContent ?? (
             <div className="flex min-h-0 flex-1 select-none flex-col">
               <div className="enterprise-card relative overflow-hidden px-5 py-4">
@@ -329,7 +346,7 @@ export function AtendimentoForm({
 
   return (
     <div className="space-y-6">
-      <form action={action} className="enterprise-form enterprise-card space-y-5 overflow-visible p-5 sm:p-6">
+      <form action={submitAtendimento} className="enterprise-form enterprise-card space-y-5 overflow-visible p-5 sm:p-6">
         <div className="border-b border-[#e0e0e0] pb-4">
           <h2 className="text-base font-medium text-[#161616]">Dados do atendimento</h2>
           <p className="mt-1 text-sm text-[#525252]">Selecione um cliente existente ou inicie um novo cadastro.</p>

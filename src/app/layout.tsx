@@ -33,6 +33,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Soren Connect Platform",
   description: "Sistema comercial de atendimento e simulação de consórcios",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

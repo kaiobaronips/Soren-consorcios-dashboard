@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import Decimal from "decimal.js";
+import { ArrowLeft } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -19,15 +20,6 @@ import {
   chartTooltipContentStyle,
   chartTooltipLabelStyle,
 } from "@/components/ui/chart-theme";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,6 +118,7 @@ export function SimulationPanel({
   indexes,
   projectedRates,
   canEditRate,
+  onBack,
 }: {
   product: SimulationPanelProduct;
   clientId: string;
@@ -134,8 +127,8 @@ export function SimulationPanel({
   indexes: Record<string, FinancialIndex>;
   projectedRates: ProjectedRates;
   canEditRate: boolean;
+  onBack: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(product.termMonths);
   const [scenario, setScenario] = useState<Scenario>("base");
   const [customRate, setCustomRate] = useState("");
@@ -206,174 +199,185 @@ export function SimulationPanel({
     parcela: Number(point.correctedInstallment),
   }));
 
+  const formId = `save-simulation-${product.id}`;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) {
-          setMonth(product.termMonths);
-          setScenario("base");
-          setCustomRate("");
-        }
-      }}
-    >
-      <DialogTrigger
-        render={
-          <Button className="enterprise-button enterprise-button-compact enterprise-button-primary !h-5 !min-h-5 !min-w-[52px] !px-2 !text-[9px] !leading-3 rounded-sm border border-[color:var(--enterprise-blue)] font-medium" />
-        }
-      >
-        Simular
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Simulação — {product.productName}</DialogTitle>
-          <DialogDescription>
-            Projeção de correção da carta e da parcela ao longo do prazo. Valores estimados, sujeitos ao
-            índice real de cada período.
-          </DialogDescription>
-        </DialogHeader>
+    <article className="enterprise-simulation-page">
+      <header className="enterprise-simulation-page-header">
+        <Button
+          type="button"
+          aria-label="Voltar aos resultados"
+          className="enterprise-button enterprise-button-icon enterprise-button-secondary"
+          onClick={onBack}
+        >
+          <ArrowLeft aria-hidden />
+        </Button>
+        <Button
+          type="submit"
+          form={formId}
+          disabled={savePending}
+          className="enterprise-button enterprise-button-primary rounded-sm px-4"
+        >
+          {savePending ? "Salvando..." : "Salvar simulação"}
+        </Button>
+      </header>
 
-        <div className="space-y-4">
-          <CorrectionSlider month={month} termMonths={product.termMonths} onChange={setMonth} />
+      <div className="enterprise-simulation-body">
+        <section className="enterprise-simulation-section" aria-labelledby="simulation-projection-title">
+          <header className="enterprise-simulation-section-header">
+            <div>
+              <h3 id="simulation-projection-title" className="enterprise-simulation-section-title">Projeção do plano</h3>
+              <p className="enterprise-simulation-section-description">Selecione o momento do contrato para atualizar os valores projetados.</p>
+            </div>
+          </header>
+          <div className="enterprise-simulation-section-content">
+            <CorrectionSlider month={month} termMonths={product.termMonths} onChange={setMonth} />
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Carta nominal</p>
-              <p className="font-semibold tabular-nums">{formatCurrency(product.creditAmount)}</p>
+            <div className="enterprise-simulation-metrics">
+              <div className="enterprise-simulation-metric">
+                <p>Carta nominal</p>
+                <strong>{formatCurrency(product.creditAmount)}</strong>
+              </div>
+              <div className="enterprise-simulation-metric enterprise-simulation-metric-primary">
+                <p>Carta corrigida</p>
+                <strong>{formatCurrency(projectedCredit)}</strong>
+              </div>
+              <div className="enterprise-simulation-metric">
+                <p>Parcela nominal</p>
+                <strong>{formatCurrency(product.regularInstallmentAmount)}</strong>
+              </div>
+              <div className="enterprise-simulation-metric">
+                <p>Parcela no período</p>
+                <strong>{formatCurrency(projectedInstallment)}</strong>
+              </div>
+              <div className="enterprise-simulation-metric">
+                <p>Total pago até o mês</p>
+                <strong>{formatCurrency(projectedTotalPaid)}</strong>
+              </div>
+              <div className="enterprise-simulation-metric">
+                <p>Correção acumulada</p>
+                <strong>{formatPercent(accumulatedCorrectionPercent)}</strong>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Carta corrigida</p>
-              <p className="font-heading text-lg font-semibold text-primary tabular-nums">{formatCurrency(projectedCredit)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Parcela nominal</p>
-              <p className="font-semibold tabular-nums">{formatCurrency(product.regularInstallmentAmount)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Parcela no período</p>
-              <p className="font-semibold tabular-nums">{formatCurrency(projectedInstallment)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total pago até o mês</p>
-              <p className="font-semibold tabular-nums">{formatCurrency(projectedTotalPaid)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Correção acumulada</p>
-              <p className="font-semibold tabular-nums">{formatPercent(accumulatedCorrectionPercent)}</p>
-            </div>
+
+            {chartData.length > 0 && (
+              <div className="enterprise-simulation-chart">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 12, right: 16, left: 8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis dataKey="ano" tick={chartAxisTick} tickLine={false} axisLine={false} />
+                    <YAxis width={70} tick={chartAxisTick} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} />
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={chartTooltipContentStyle}
+                      labelStyle={chartTooltipLabelStyle}
+                    />
+                    <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke={chartSeries.primary} strokeWidth={2} dot={false} {...chartLineAnimation} />
+                    <Line type="monotone" dataKey="parcela" name="Parcela corrigida" stroke={chartSeries.comparison} strokeWidth={2} dot={false} {...chartLineAnimation} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
+        </section>
 
-          {chartData.length > 0 && (
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
-                  <XAxis dataKey="ano" tick={chartAxisTick} tickLine={false} axisLine={false} />
-                  <YAxis width={70} tick={chartAxisTick} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} />
-                  <Tooltip
-                    formatter={(value) => formatCurrency(Number(value))}
-                    contentStyle={chartTooltipContentStyle}
-                    labelStyle={chartTooltipLabelStyle}
+        <section className="enterprise-simulation-section" aria-labelledby="simulation-scenario-title">
+          <header className="enterprise-simulation-section-header">
+            <div>
+              <h3 id="simulation-scenario-title" className="enterprise-simulation-section-title">Cenário e premissas</h3>
+              <p className="enterprise-simulation-section-description">Defina o cenário de correção usado nos cálculos.</p>
+            </div>
+          </header>
+          <div className="enterprise-simulation-section-content enterprise-simulation-scenario-grid">
+            <div className="space-y-2">
+              <Label className="enterprise-field-label">Cenário</Label>
+              <div className="enterprise-simulation-segmented" role="group" aria-label="Cenário">
+                {SCENARIO_OPTIONS.filter((opt) => opt.value !== "custom" || canEditRate).map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    className={`enterprise-button ${
+                      scenario === opt.value ? "enterprise-button-primary" : "enterprise-button-secondary"
+                    }`}
+                    onClick={() => setScenario(opt.value)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              {scenario === "custom" && canEditRate && (
+                <div className="space-y-1">
+                  <Label htmlFor="customRate" className="enterprise-field-label">Taxa anual personalizada (%)</Label>
+                  <Input
+                    id="customRate"
+                    className="enterprise-field-input"
+                    placeholder={base.baseRatePercent}
+                    value={customRate}
+                    onChange={(e) => setCustomRate(e.target.value)}
                   />
-                  <Line type="monotone" dataKey="carta" name="Carta corrigida" stroke={chartSeries.primary} strokeWidth={2} dot={false} {...chartLineAnimation} />
-                  <Line type="monotone" dataKey="parcela" name="Parcela corrigida" stroke={chartSeries.comparison} strokeWidth={2} dot={false} {...chartLineAnimation} />
-                </LineChart>
-              </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label>Cenário</Label>
-            <div className="flex flex-wrap gap-1" role="group" aria-label="Cenário">
-              {SCENARIO_OPTIONS.filter((opt) => opt.value !== "custom" || canEditRate).map((opt) => (
-                <Button
-                  key={opt.value}
-                  type="button"
-                  size="sm"
-                  variant={scenario === opt.value ? "default" : "outline"}
-                  onClick={() => setScenario(opt.value)}
-                >
-                  {opt.label}
-                </Button>
-              ))}
-            </div>
-            {scenario === "custom" && canEditRate && (
-              <div className="space-y-1">
-                <Label htmlFor="customRate">Taxa anual personalizada (%)</Label>
-                <Input
-                  id="customRate"
-                  placeholder={base.baseRatePercent}
-                  value={customRate}
-                  onChange={(e) => setCustomRate(e.target.value)}
-                />
-              </div>
-            )}
+            <AssumptionsBlock assumptions={assumptions} />
           </div>
+        </section>
 
-          <AssumptionsBlock assumptions={assumptions} />
+        <details className="enterprise-simulation-disclosure group">
+          <summary>
+            Comparar com investimentos
+          </summary>
+          <div className="enterprise-simulation-comparison-content">
+            <section className="enterprise-simulation-comparison-section">
+              <h3 className="enterprise-simulation-subtitle">Simulação CDI (juros compostos)</h3>
+              <CdiCompoundSlider
+                cdiAnnualRatePercent={indexes.CDI?.annualRatePercent ?? "0"}
+                creditAmount={product.creditAmount}
+                consortiumAnnualRatePercent={annualRatePercent}
+                termMonths={product.termMonths}
+                defaultMonthlyContribution={product.regularInstallmentAmount}
+              />
+            </section>
+            <section className="enterprise-simulation-comparison-section">
+              <h3 className="enterprise-simulation-subtitle">Comparação por índice</h3>
+              <InvestmentComparison
+                creditAmount={product.creditAmount}
+                monthlyInstallment={product.regularInstallmentAmount}
+                consortiumAnnualRatePercent={annualRatePercent}
+                termMonths={product.termMonths}
+                indexes={indexes}
+              />
+            </section>
+          </div>
+        </details>
 
-          <details className="group space-y-3 rounded-lg border bg-muted/40 px-3 py-2">
-            <summary className="cursor-pointer font-medium transition-colors select-none group-open:text-primary">
-              Comparar com investimentos
-            </summary>
-            <div className="space-y-6 pt-2">
-              <div>
-                <p className="mb-2 text-sm font-medium">Simulação CDI (juros compostos)</p>
-                <CdiCompoundSlider
-                  cdiAnnualRatePercent={indexes.CDI?.annualRatePercent ?? "0"}
-                  creditAmount={product.creditAmount}
-                  consortiumAnnualRatePercent={annualRatePercent}
-                  termMonths={product.termMonths}
-                  defaultMonthlyContribution={product.regularInstallmentAmount}
-                />
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium">Comparação por índice</p>
-                <InvestmentComparison
-                  creditAmount={product.creditAmount}
-                  monthlyInstallment={product.regularInstallmentAmount}
-                  consortiumAnnualRatePercent={annualRatePercent}
-                  termMonths={product.termMonths}
-                  indexes={indexes}
-                />
-              </div>
-            </div>
-          </details>
+        <form id={formId} action={saveAction}>
+          <input type="hidden" name="clientId" value={clientId} />
+          <input type="hidden" name="productId" value={product.id} />
+          <input type="hidden" name="selectedMonth" value={effectiveMonth} />
+          <input type="hidden" name="scenario" value={assumptions.scenario} />
+          <input type="hidden" name="indexCode" value={assumptions.indexCode} />
+          <input type="hidden" name="annualRatePercent" value={assumptions.annualRatePercent} />
+          <input type="hidden" name="rateOrigin" value={assumptions.rateOrigin} />
+          <input type="hidden" name="rateUpdatedAt" value={assumptions.rateUpdatedAt} />
+          <input type="hidden" name="rateType" value={assumptions.rateType} />
+          <input type="hidden" name="adjustmentFrequencyMonths" value={assumptions.adjustmentFrequencyMonths} />
+          <input type="hidden" name="monthlyAvailableAmount" value={monthlyAvailableAmount} />
+          <input type="hidden" name="monthlyIncome" value={monthlyIncome ?? ""} />
+          <input type="hidden" name="cdiAnnualRatePercent" value={indexes.CDI?.annualRatePercent ?? ""} />
 
-          <form action={saveAction} className="space-y-2">
-            <input type="hidden" name="clientId" value={clientId} />
-            <input type="hidden" name="productId" value={product.id} />
-            <input type="hidden" name="selectedMonth" value={effectiveMonth} />
-            <input type="hidden" name="scenario" value={assumptions.scenario} />
-            <input type="hidden" name="indexCode" value={assumptions.indexCode} />
-            <input type="hidden" name="annualRatePercent" value={assumptions.annualRatePercent} />
-            <input type="hidden" name="rateOrigin" value={assumptions.rateOrigin} />
-            <input type="hidden" name="rateUpdatedAt" value={assumptions.rateUpdatedAt} />
-            <input type="hidden" name="rateType" value={assumptions.rateType} />
-            <input type="hidden" name="adjustmentFrequencyMonths" value={assumptions.adjustmentFrequencyMonths} />
-            <input type="hidden" name="monthlyAvailableAmount" value={monthlyAvailableAmount} />
-            <input type="hidden" name="monthlyIncome" value={monthlyIncome ?? ""} />
-            <input type="hidden" name="cdiAnnualRatePercent" value={indexes.CDI?.annualRatePercent ?? ""} />
-
-            {saveState?.error && (
-              <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive">
-                {saveState.error}
-              </p>
-            )}
-            {saveState?.simulationId && (
-              <p className="rounded-md bg-success-soft px-3 py-2 text-sm font-medium text-success">
-                Simulação salva com sucesso.
-              </p>
-            )}
-            <DialogFooter>
-              <Button type="submit" disabled={savePending}>
-                {savePending ? "Salvando..." : "Salvar simulação"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </div>
-      </DialogContent>
-    </Dialog>
+          {saveState?.error && (
+            <p role="alert" className="enterprise-simulation-message enterprise-simulation-message-error">
+              {saveState.error}
+            </p>
+          )}
+          {saveState?.simulationId && (
+            <p className="enterprise-simulation-message enterprise-simulation-message-success">
+              Simulação salva com sucesso.
+            </p>
+          )}
+        </form>
+      </div>
+    </article>
   );
 }

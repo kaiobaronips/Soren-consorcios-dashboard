@@ -110,8 +110,9 @@ export function InvestmentComparison({
             <Button
               key={opt.value}
               type="button"
-              size="sm"
-              variant={selectedIndex === opt.value ? "default" : "outline"}
+              className={`enterprise-button rounded-sm px-4 ${
+                selectedIndex === opt.value ? "enterprise-button-primary" : "enterprise-button-secondary"
+              }`}
               onClick={() => setSelectedIndex(opt.value)}
             >
               {opt.label}
@@ -134,8 +135,9 @@ export function InvestmentComparison({
             <Button
               key={opt.value}
               type="button"
-              size="sm"
-              variant={mode === opt.value ? "default" : "outline"}
+              className={`enterprise-button rounded-sm px-4 ${
+                mode === opt.value ? "enterprise-button-primary" : "enterprise-button-secondary"
+              }`}
               onClick={() => setMode(opt.value)}
             >
               {opt.label}

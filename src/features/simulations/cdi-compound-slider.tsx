@@ -120,8 +120,11 @@ export function CdiCompoundSlider({
             <Button
               key={opt}
               type="button"
-              size="sm"
-              variant={!isCustomPercentage && cdiPercentage === opt ? "default" : "outline"}
+              className={`enterprise-button rounded-sm px-4 ${
+                !isCustomPercentage && cdiPercentage === opt
+                  ? "enterprise-button-primary"
+                  : "enterprise-button-secondary"
+              }`}
               onClick={() => setCdiPercentage(opt)}
             >
               {opt}%
@@ -129,8 +132,9 @@ export function CdiCompoundSlider({
           ))}
           <Button
             type="button"
-            size="sm"
-            variant={isCustomPercentage ? "default" : "outline"}
+            className={`enterprise-button rounded-sm px-4 ${
+              isCustomPercentage ? "enterprise-button-primary" : "enterprise-button-secondary"
+            }`}
             onClick={() => setCdiPercentage("custom")}
           >
             Personalizado

@@ -2,30 +2,19 @@
 
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { RankedProduct } from "@/domain/recommendation";
-import type { ProjectedRates } from "@/domain/financial-calculations";
-import type { FinancialIndex } from "@/repositories/indexes";
-import { SimulationPanel } from "@/features/simulations/simulation-panel";
+import { Button } from "@/components/ui/button";
+import type { SimulationPanelProduct } from "@/features/simulations/simulation-panel";
 
 const CATEGORY_LABEL: Record<string, string> = { property: "Imóvel", vehicle: "Veículo", other: "Outros" };
 
 export function ResultCards({
   ranked,
   catalogMinInstallment,
-  clientId,
-  monthlyAvailableAmount,
-  monthlyIncome,
-  indexes,
-  projectedRates,
-  canEditRate,
+  onSimulate,
 }: {
   ranked: RankedProduct[];
   catalogMinInstallment?: string | null;
-  clientId: string;
-  monthlyAvailableAmount: string;
-  monthlyIncome: string | null;
-  indexes: Record<string, FinancialIndex>;
-  projectedRates: ProjectedRates;
-  canEditRate: boolean;
+  onSimulate: (product: SimulationPanelProduct) => void;
 }) {
   if (ranked.length === 0) {
     return (
@@ -106,15 +95,13 @@ export function ResultCards({
               </dl>
 
               <div className="flex items-center justify-end bg-[color:var(--enterprise-surface-subtle)] p-3">
-                <SimulationPanel
-                  product={item.product}
-                  clientId={clientId}
-                  monthlyAvailableAmount={monthlyAvailableAmount}
-                  monthlyIncome={monthlyIncome}
-                  indexes={indexes}
-                  projectedRates={projectedRates}
-                  canEditRate={canEditRate}
-                />
+                <Button
+                  type="button"
+                  className="enterprise-button enterprise-button-compact enterprise-button-primary !h-5 !min-h-5 !min-w-[52px] !px-2 !text-[9px] !leading-3 rounded-sm border border-[color:var(--enterprise-blue)] font-medium"
+                  onClick={() => onSimulate(item.product)}
+                >
+                  Simular
+                </Button>
               </div>
             </li>
           );

@@ -17,6 +17,7 @@ export type ProductFilters = {
   category?: Product["category"];
   status?: Product["status"];
   search?: string;
+  termMonths?: number;
 };
 
 const COLUMNS = "id, product_name, product_code, administrator_name, category, credit_amount, term_months, total_administration_fee_percent, first_12_installment_amount, regular_installment_amount, correction_index, status, is_demo, source_document_id, source_page, extraction_confidence";
@@ -62,6 +63,7 @@ export async function listProducts(filters: ProductFilters): Promise<Product[]> 
     .order("category").order("credit_amount", { ascending: false }).order("term_months");
   if (filters.category) q = q.eq("category", filters.category);
   if (filters.status) q = q.eq("status", filters.status);
+  if (filters.termMonths) q = q.eq("term_months", filters.termMonths);
   if (filters.search) {
     // Vírgulas e parênteses quebram a sintaxe do .or(...) do PostgREST; removemos antes de montar o filtro.
     const term = filters.search.replace(/[,()]/g, " ").trim();
