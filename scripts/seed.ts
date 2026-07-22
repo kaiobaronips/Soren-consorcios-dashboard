@@ -24,10 +24,10 @@ const SETTINGS: Record<string, unknown> = {
 
 async function main() {
   // idempotente: reutiliza org existente pelo nome
-  const { data: existingOrg } = await admin.from("organizations").select("id").eq("name", "Soren Consórcios").maybeSingle();
+  const { data: existingOrg } = await admin.from("organizations").select("id").eq("name", "Soren Investimentos").maybeSingle();
   const orgId: string =
     existingOrg?.id ??
-    (await admin.from("organizations").insert({ name: "Soren Consórcios", document: "00.000.000/0001-00" }).select("id").single()).data!.id;
+    (await admin.from("organizations").insert({ name: "Soren Investimentos", document: "00.000.000/0001-00" }).select("id").single()).data!.id;
 
   for (const u of USERS) {
     const { data: created, error } = await admin.auth.admin.createUser({

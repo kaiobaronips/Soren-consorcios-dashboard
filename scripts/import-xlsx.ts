@@ -26,8 +26,8 @@ async function main() {
   if (!filePath) throw new Error("Uso: pnpm import:xlsx <arquivo.xlsx>");
 
   const { data: org, error: orgErr } = await admin
-    .from("organizations").select("id").eq("name", "Soren Consórcios").single();
-  if (orgErr || !org) throw new Error("Organização demo não encontrada — rode pnpm db:seed antes.");
+    .from("organizations").select("id").eq("name", "Soren Investimentos").single();
+  if (orgErr || !org) throw new Error("Organização não encontrada — rode pnpm db:seed antes.");
 
   const { products, invalidRows } = await parseConsorcioXlsx(filePath);
 
