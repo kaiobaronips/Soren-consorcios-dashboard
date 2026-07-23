@@ -38,6 +38,7 @@ import {
   type SimulationAssumptions,
 } from "@/domain/financial-calculations";
 import { AssumptionsBlock } from "./assumptions-block";
+import { BidsPanel } from "./bids-panel";
 import { CdiCompoundSlider } from "./cdi-compound-slider";
 import { CorrectionSlider } from "./correction-slider";
 import { InvestmentComparison } from "./investment-comparison";
@@ -257,22 +258,14 @@ export function SimulationPanel({
 
       <div className="enterprise-simulation-body">
         {activeTab === "bids" && (
-          <section
+          <div
             id={panelId("bids")}
             role="tabpanel"
             aria-labelledby={tabId("bids")}
-            className="enterprise-simulation-section enterprise-simulation-empty-panel"
+            className="enterprise-simulation-tab-panel"
           >
-            <header className="enterprise-simulation-section-header">
-              <div>
-                <h3 className="enterprise-simulation-section-title">Lances</h3>
-                <p className="enterprise-simulation-section-description">Simulações de lance para o plano selecionado.</p>
-              </div>
-            </header>
-            <div className="enterprise-simulation-section-content">
-              <p className="enterprise-simulation-empty-message">Nenhuma simulação de lance configurada.</p>
-            </div>
-          </section>
+            <BidsPanel product={product} annualRatePercent={annualRatePercent} />
+          </div>
         )}
 
         {activeTab === "half-installment" && (
