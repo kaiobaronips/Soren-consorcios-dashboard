@@ -19,6 +19,7 @@ export type AtendimentoInput = {
   monthlyIncome: string | null;
   desiredCategory: "property" | "vehicle" | "other" | "all";
   desiredTermMonths: number | null;
+  customCreditAmount: string | null;
 };
 
 export type AtendimentoResult = {
@@ -59,19 +60,51 @@ function toEligibilityProduct(p: {
   };
 }
 
+/** Substitui a carta do catálogo e recalcula as parcelas na mesma proporção. */
+export function applyCustomCreditAmount(
+  product: EligibilityProduct,
+  customCreditAmount: string,
+): EligibilityProduct {
+  const originalCredit = new Decimal(product.creditAmount);
+  const customCredit = new Decimal(customCreditAmount);
+  const ratio = customCredit.div(originalCredit);
+
+  return {
+    ...product,
+    creditAmount: customCredit.toFixed(2),
+    regularInstallmentAmount: new Decimal(product.regularInstallmentAmount)
+      .times(ratio)
+      .toFixed(2, Decimal.ROUND_HALF_UP),
+    first12InstallmentAmount: product.first12InstallmentAmount
+      ? new Decimal(product.first12InstallmentAmount)
+        .times(ratio)
+        .toFixed(2, Decimal.ROUND_HALF_UP)
+      : null,
+  };
+}
+
 /** Orquestra domínio de elegibilidade/ranking com produtos ativos e configurações da organização. */
 export async function runAtendimento(input: AtendimentoInput): Promise<AtendimentoResult> {
+  const customCreditEnabled = input.customCreditAmount !== null;
   const [products, settings] = await Promise.all([
     listProducts({
       status: "active",
-      ...(input.desiredCategory === "all" ? {} : { category: input.desiredCategory }),
-      ...(input.desiredTermMonths === null ? {} : { termMonths: input.desiredTermMonths }),
+      ...(!customCreditEnabled && input.desiredCategory !== "all"
+        ? { category: input.desiredCategory }
+        : {}),
+      ...(!customCreditEnabled && input.desiredTermMonths !== null
+        ? { termMonths: input.desiredTermMonths }
+        : {}),
     }),
     getOrgSettings(),
   ]);
 
   const basis = settings.eligibilityBasis;
-  const eligibilityProducts = products.map(toEligibilityProduct);
+  const eligibilityProducts = products
+    .map(toEligibilityProduct)
+    .map((product) => input.customCreditAmount
+      ? applyCustomCreditAmount(product, input.customCreditAmount)
+      : product);
 
   const classified = getEligibleProducts(
     eligibilityProducts,
@@ -83,7 +116,9 @@ export async function runAtendimento(input: AtendimentoInput): Promise<Atendimen
   const summary = summarizeEligibility(classified, basis, input.monthlyIncome);
   const { ranked, highlights } = rankConsortiumProducts(
     classified,
-    { desiredCategory: input.desiredCategory, desiredTermMonths: input.desiredTermMonths },
+    customCreditEnabled
+      ? { desiredCategory: "all", desiredTermMonths: null }
+      : { desiredCategory: input.desiredCategory, desiredTermMonths: input.desiredTermMonths },
     basis,
   );
 

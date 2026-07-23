@@ -72,6 +72,7 @@ describe("runAtendimento", () => {
       monthlyIncome: null,
       desiredCategory: "vehicle",
       desiredTermMonths: 48,
+      customCreditAmount: null,
     });
 
     expect(listProducts).toHaveBeenCalledWith({
@@ -82,5 +83,25 @@ describe("runAtendimento", () => {
     expect(result.ranked).toHaveLength(1);
     expect(result.ranked[0].product.termMonths).toBe(48);
     expect(result.ranked[0].product.id).toBe("vd48");
+  });
+
+  it("substitui as cartas e recalcula as parcelas sem aplicar categoria ou prazo", async () => {
+    const result = await runAtendimento({
+      monthlyAvailableAmount: "2500.00",
+      monthlyIncome: null,
+      desiredCategory: "property",
+      desiredTermMonths: 48,
+      customCreditAmount: "200000.00",
+    });
+
+    expect(listProducts).toHaveBeenCalledWith({ status: "active" });
+    expect(result.ranked).toHaveLength(2);
+
+    const vd48 = result.ranked.find((item) => item.product.id === "vd48");
+    const vd60 = result.ranked.find((item) => item.product.id === "vd60");
+    expect(vd48?.product.creditAmount).toBe("200000.00");
+    expect(vd48?.product.regularInstallmentAmount).toBe("2400.00");
+    expect(vd60?.product.creditAmount).toBe("200000.00");
+    expect(vd60?.product.regularInstallmentAmount).toBe("1866.67");
   });
 });

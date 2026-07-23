@@ -8,7 +8,11 @@ import { listProducts } from "@/repositories/products";
 import { logAudit } from "@/repositories/audit";
 import { basisInstallment } from "@/domain/eligibility";
 import { getOrgSettings } from "@/repositories/settings";
-import { runAtendimento, type AtendimentoResult } from "@/services/atendimento";
+import {
+  applyCustomCreditAmount,
+  runAtendimento,
+  type AtendimentoResult,
+} from "@/services/atendimento";
 import { atenderSchema } from "./schema";
 
 export type AtenderClient = {
@@ -30,19 +34,23 @@ export type AtenderState = {
 async function catalogMinInstallment(
   desiredCategory: "all" | "property" | "vehicle" | "other",
   desiredTermMonths: number | null,
+  customCreditAmount: string | null,
 ): Promise<string | null> {
   const [products, settings] = await Promise.all([
     listProducts({
       status: "active",
-      ...(desiredCategory === "all" ? {} : { category: desiredCategory }),
-      ...(desiredTermMonths === null ? {} : { termMonths: desiredTermMonths }),
+      ...(!customCreditAmount && desiredCategory !== "all" ? { category: desiredCategory } : {}),
+      ...(!customCreditAmount && desiredTermMonths !== null ? { termMonths: desiredTermMonths } : {}),
     }),
     getOrgSettings(),
   ]);
   if (products.length === 0) return null;
   let min: Decimal | null = null;
   for (const p of products) {
-    const installment = new Decimal(basisInstallment(p, settings.eligibilityBasis));
+    const eligibilityProduct = customCreditAmount
+      ? applyCustomCreditAmount(p, customCreditAmount)
+      : p;
+    const installment = new Decimal(basisInstallment(eligibilityProduct, settings.eligibilityBasis));
     if (!min || installment.lt(min)) min = installment;
   }
   return min ? min.toFixed(2) : null;
@@ -62,6 +70,7 @@ export async function atender(_prev: AtenderState | undefined, formData: FormDat
   const monthlyIncome = d.monthlyIncome || null;
   const monthlyAvailableAmount = d.monthlyAvailableAmount;
   const desiredTermMonths = d.desiredTermMonths ? Number(d.desiredTermMonths) : null;
+  const customCreditAmount = d.customCreditEnabled ? d.customCreditAmount || null : null;
 
   const clientId = d.clientId || "";
   let clientName = "";
@@ -88,12 +97,13 @@ export async function atender(_prev: AtenderState | undefined, formData: FormDat
     monthlyIncome,
     desiredCategory: d.desiredCategory,
     desiredTermMonths,
+    customCreditAmount,
   });
 
   revalidatePath("/clientes");
 
   const hint = result.summary.eligibleCount === 0
-    ? await catalogMinInstallment(d.desiredCategory, desiredTermMonths)
+    ? await catalogMinInstallment(d.desiredCategory, desiredTermMonths, customCreditAmount)
     : null;
 
   return {

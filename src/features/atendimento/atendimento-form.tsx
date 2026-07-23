@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { searchClientsAction } from "@/features/clients/actions";
 import type { Client } from "@/repositories/clients";
 import { Button } from "@/components/ui/button";
@@ -48,12 +48,14 @@ function EnterpriseSelect({
   value,
   options,
   onValueChange,
+  disabled = false,
 }: {
   id: string;
   name: string;
   value: string;
   options: Array<{ value: string; label: string }>;
   onValueChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = options.find((option) => option.value === value) ?? options[0];
@@ -67,6 +69,7 @@ function EnterpriseSelect({
         className="enterprise-select-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
+        disabled={disabled}
         onClick={() => setOpen((current) => !current)}
         onBlur={(event) => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget)) setOpen(false);
@@ -75,7 +78,7 @@ function EnterpriseSelect({
         <span>{selected.label}</span>
         <ChevronDown className="enterprise-select-chevron" aria-hidden />
       </button>
-      {open && (
+      {open && !disabled && (
         <div className="enterprise-select-menu" role="listbox" aria-labelledby={id} tabIndex={-1}>
           {options.map((option) => (
             <button
@@ -120,6 +123,8 @@ export function AtendimentoForm({
   const [available, setAvailable] = useState("");
   const [desiredCategory, setDesiredCategory] = useState("all");
   const [desiredTermMonths, setDesiredTermMonths] = useState("");
+  const [customCreditEnabled, setCustomCreditEnabled] = useState(false);
+  const [customCreditAmount, setCustomCreditAmount] = useState("");
   const [simulationProduct, setSimulationProduct] = useState<SimulationPanelProduct | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -247,6 +252,7 @@ export function AtendimentoForm({
             value={desiredCategory}
             options={CATEGORIES}
             onValueChange={setDesiredCategory}
+            disabled={customCreditEnabled}
           />
         </div>
         <div className="space-y-1.5">
@@ -257,6 +263,50 @@ export function AtendimentoForm({
             value={desiredTermMonths}
             options={TERMS}
             onValueChange={setDesiredTermMonths}
+            disabled={customCreditEnabled}
+          />
+        </div>
+      </div>
+
+      <div className="enterprise-custom-credit">
+        <div className="enterprise-custom-credit-header">
+          <div>
+            <p className="enterprise-custom-credit-title">Carta personalizada</p>
+            <p className="enterprise-custom-credit-description">
+              Substitui o valor das cartas cadastradas na consulta.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={cn(
+              "enterprise-custom-credit-selector",
+              customCreditEnabled && "enterprise-custom-credit-selector-active",
+            )}
+            aria-pressed={customCreditEnabled}
+            onClick={() => setCustomCreditEnabled((current) => !current)}
+          >
+            {customCreditEnabled && <Check aria-hidden />}
+            {customCreditEnabled ? "Selecionado" : "Selecionar"}
+          </button>
+        </div>
+
+        <input
+          type="hidden"
+          name="customCreditEnabled"
+          value={customCreditEnabled ? "true" : "false"}
+        />
+        <div className="enterprise-custom-credit-field">
+          <Label htmlFor="customCreditAmount">Valor da carta personalizada</Label>
+          <Input
+            id="customCreditAmount"
+            name="customCreditAmount"
+            placeholder="100.000,00"
+            value={customCreditAmount}
+            disabled={!customCreditEnabled}
+            required={customCreditEnabled}
+            className={inputClassName}
+            inputMode="numeric"
+            onChange={(event) => setCustomCreditAmount(formatMoney(event.target.value))}
           />
         </div>
       </div>

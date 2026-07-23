@@ -32,10 +32,19 @@ export const atenderSchema = z
       .regex(/^[1-9]\d*$/, "Prazo inválido")
       .optional()
       .or(z.literal("")),
+    customCreditEnabled: z.enum(["true", "false"]).transform((value) => value === "true"),
+    customCreditAmount: moneyInput.optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
     if (!data.clientId) {
       ctx.addIssue({ code: "custom", path: ["clientName"], message: "Selecione um cliente cadastrado" });
+    }
+    if (data.customCreditEnabled && Number(data.customCreditAmount) <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["customCreditAmount"],
+        message: "Informe um valor de carta personalizada maior que zero",
+      });
     }
   });
 
