@@ -15,7 +15,6 @@ import {
   contractYearOfMonth,
   EMBEDDED_BID_PERCENT,
   type Bid,
-  type ReductionMode,
 } from "@/domain/financial-calculations";
 import type { SimulationPanelProduct } from "./simulation-panel";
 
@@ -83,7 +82,6 @@ export function BidsPanel({
   const [month, setMonth] = useState(1);
   const [bids, setBids] = useState<Bid[]>([]);
   const [freeInput, setFreeInput] = useState("");
-  const [reductionMode, setReductionMode] = useState<ReductionMode>("installment");
 
   const markers = useMemo(() => buildTimelineMarkers(product.termMonths), [product.termMonths]);
 
@@ -338,38 +336,6 @@ export function BidsPanel({
         </div>
       </section>
 
-      {/* Destino do valor abatido */}
-      <section className="enterprise-simulation-section" aria-labelledby="bids-reduction-title">
-        <header className="enterprise-simulation-section-header">
-          <div>
-            <h3 id="bids-reduction-title" className="enterprise-simulation-section-title">
-              Destino do valor abatido
-            </h3>
-            <p className="enterprise-simulation-section-description">
-              Como o lance reduz o plano após a contemplação.
-            </p>
-          </div>
-        </header>
-        <div className="enterprise-simulation-section-content">
-          <div className="enterprise-simulation-segmented" role="group" aria-label="Destino do valor abatido">
-            <Button
-              type="button"
-              className={`enterprise-button ${reductionMode === "installment" ? "enterprise-button-primary" : "enterprise-button-secondary"}`}
-              onClick={() => setReductionMode("installment")}
-            >
-              Reduzir parcela
-            </Button>
-            <Button
-              type="button"
-              className={`enterprise-button ${reductionMode === "term" ? "enterprise-button-primary" : "enterprise-button-secondary"}`}
-              onClick={() => setReductionMode("term")}
-            >
-              Reduzir prazo
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Resultados */}
       <section className="enterprise-simulation-section" aria-labelledby="bids-results-title">
         <header className="enterprise-simulation-section-header">
@@ -400,17 +366,14 @@ export function BidsPanel({
               <p>Saldo devedor após</p>
               <strong>{formatCurrency(result.debtBalanceAfter)}</strong>
             </div>
-            {reductionMode === "installment" ? (
-              <div className="enterprise-simulation-metric">
-                <p>Parcela após contemplação</p>
-                <strong>{formatCurrency(result.installmentAfterReducingInstallment)}</strong>
-              </div>
-            ) : (
-              <div className="enterprise-simulation-metric">
-                <p>Prazo após contemplação</p>
-                <strong className="tabular-nums">{result.termAfterReducingTerm} meses</strong>
-              </div>
-            )}
+            <div className="enterprise-simulation-metric">
+              <p>Parcela após contemplação</p>
+              <strong>{formatCurrency(result.installmentAfterReducingInstallment)}</strong>
+            </div>
+            <div className="enterprise-simulation-metric">
+              <p>Prazo após contemplação</p>
+              <strong className="tabular-nums">{result.monthsToSettleAfterBid} meses</strong>
+            </div>
           </div>
         </div>
       </section>

@@ -119,8 +119,9 @@ describe("calculateBids — parcela/prazo após contemplação", () => {
     expect(result.installmentAfterReducingInstallment).toBe("3611.11");
   });
 
-  it("Redução do Prazo: mantém a parcela, encerra antes", () => {
-    // ceil(325000 / 5000) = 65 meses restantes; prazo total = 10 + 65 = 75 (< 100).
-    expect(result.termAfterReducingTerm).toBe(75);
+  it("Meses para quitar: mantém a parcela, encerra antes", () => {
+    // Dívida restante após o lance = 325000; ÷ parcela 5000 = 65 meses para quitar.
+    // (< prazo restante original de 90 meses no mês 10.)
+    expect(result.monthsToSettleAfterBid).toBe(65);
   });
 });

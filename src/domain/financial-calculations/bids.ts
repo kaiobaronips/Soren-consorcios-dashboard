@@ -60,10 +60,10 @@ export type BidsResult = {
   debtBalanceAfter: string;
   /** Prazo restante no momento da contemplação (termMonths − mês de contemplação). */
   remainingTermBefore: number;
-  /** Parcela após contemplação no modo "Redução das Parcelas". */
+  /** Parcela após contemplação (mantém o prazo restante, reduz a parcela). */
   installmentAfterReducingInstallment: string;
-  /** Prazo total (meses) no modo "Redução do Prazo". */
-  termAfterReducingTerm: number;
+  /** Meses que faltam para quitar a carta após o lance (mantém a parcela, encerra antes). */
+  monthsToSettleAfterBid: number;
 };
 
 /** Saldo devedor total do plano = carta × (1 + taxaAdm%). */
@@ -135,8 +135,8 @@ export function calculateBids(params: {
   // Redução das Parcelas: mantém o prazo restante, recalcula a parcela.
   const installmentAfter = remainingAfterBid.div(remainingTermBefore);
 
-  // Redução do Prazo: mantém a parcela atual, quita as últimas parcelas.
-  const remainingTermAfter = installment.gt(0)
+  // Meses restantes para quitar: mantém a parcela atual, quita as últimas parcelas.
+  const monthsToSettle = installment.gt(0)
     ? remainingAfterBid.div(installment).ceil().toNumber()
     : remainingTermBefore;
 
@@ -151,6 +151,6 @@ export function calculateBids(params: {
     debtBalanceAfter: debtBalanceAfter.toFixed(2, Decimal.ROUND_HALF_UP),
     remainingTermBefore,
     installmentAfterReducingInstallment: Decimal.max(installmentAfter, new Decimal(0)).toFixed(2, Decimal.ROUND_HALF_UP),
-    termAfterReducingTerm: month + remainingTermAfter,
+    monthsToSettleAfterBid: monthsToSettle,
   };
 }
