@@ -273,9 +273,6 @@ export function AtendimentoForm({
     <SimulationPanel
       key={simulationProduct.id}
       product={simulationProduct}
-      clientId={state.client.id}
-      monthlyAvailableAmount={state.client.monthlyAvailableAmount}
-      monthlyIncome={state.client.monthlyIncome}
       indexes={indexes}
       projectedRates={projectedRates}
       canEditRate={canEditRate}
@@ -313,7 +310,12 @@ export function AtendimentoForm({
           </form>
         </aside>
 
-        <section className="enterprise-atendimento-results flex min-w-0 flex-1 flex-col p-6 lg:p-8">
+        <section
+          className={cn(
+            "enterprise-atendimento-results flex min-w-0 flex-1 flex-col",
+            simulationProduct ? "p-0" : "p-6 lg:p-8",
+          )}
+        >
           {resultsContent ?? (
             <div className="flex min-h-0 flex-1 select-none flex-col">
               <div className="enterprise-card relative overflow-hidden px-5 py-4">
