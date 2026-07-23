@@ -325,7 +325,7 @@ export function SimulationPanel({
 
         <details className="enterprise-simulation-disclosure group">
           <summary>
-            Comparar com investimentos
+            COMPARATIVO  MERCADO FINANCEIRO
           </summary>
           <div className="enterprise-simulation-comparison-content">
             <section className="enterprise-simulation-comparison-section">

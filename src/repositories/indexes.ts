@@ -14,7 +14,7 @@ export type FinancialIndex = {
  * PostgREST devolve NUMERIC como number no JSON (perde zeros à direita);
  * normalizamos annual_rate para string canônica com decimal.js antes de expor.
  */
-type Row = {
+export type FinancialIndexRow = {
   index_code: string;
   annual_rate: number | null;
   reference_period: string;
@@ -23,7 +23,7 @@ type Row = {
   updated_at: string;
 };
 
-function toFinancialIndex(r: Row): FinancialIndex {
+function toFinancialIndex(r: FinancialIndexRow): FinancialIndex {
   return {
     indexCode: r.index_code,
     annualRatePercent: new Decimal(r.annual_rate ?? 0).toFixed(4),
@@ -34,8 +34,33 @@ function toFinancialIndex(r: Row): FinancialIndex {
 }
 
 /**
+ * Escolhe um valor por índice priorizando dados oficiais/históricos sobre projeções.
+ * Entre registros do mesmo tipo, vence o atualizado mais recentemente.
+ *
+ * Isso impede que um seed projetado e mais novo esconda uma taxa sincronizada do BCB.
+ */
+export function selectPreferredIndexes(rows: FinancialIndexRow[]): Record<string, FinancialIndex> {
+  const preferred: Record<string, FinancialIndexRow> = {};
+
+  for (const row of rows) {
+    const current = preferred[row.index_code];
+    if (
+      !current
+      || (current.projected && !row.projected)
+      || (current.projected === row.projected && row.updated_at > current.updated_at)
+    ) {
+      preferred[row.index_code] = row;
+    }
+  }
+
+  return Object.fromEntries(
+    Object.entries(preferred).map(([indexCode, row]) => [indexCode, toFinancialIndex(row)]),
+  );
+}
+
+/**
  * Lê `financial_indexes` (RLS filtra por org / registros globais) e retorna,
- * por `index_code`, o registro mais recente (maior `reference_period`).
+ * por `index_code`, o dado oficial quando disponível; projeções são fallback.
  */
 export async function getLatestIndexes(): Promise<Record<string, FinancialIndex>> {
   const supabase = await createServerSupabase();
@@ -45,17 +70,7 @@ export async function getLatestIndexes(): Promise<Record<string, FinancialIndex>
     .order("updated_at", { ascending: false });
   if (error) throw error;
 
-  const rows = (data ?? []) as Row[];
-  const latest: Record<string, FinancialIndex> = {};
-  for (const row of rows) {
-    // Ordenado por updated_at desc: a primeira ocorrência de cada index_code é o valor
-    // mais recentemente obtido (a sincronização do BCB vence o seed antigo, mesmo que a
-    // reference_period do seed seja "mais nova" — IGP-M/IPCA fecham no mês anterior).
-    if (!(row.index_code in latest)) {
-      latest[row.index_code] = toFinancialIndex(row);
-    }
-  }
-  return latest;
+  return selectPreferredIndexes((data ?? []) as FinancialIndexRow[]);
 }
 
 /**

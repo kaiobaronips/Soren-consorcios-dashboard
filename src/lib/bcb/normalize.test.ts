@@ -15,6 +15,9 @@ describe("annualizeDailyRate", () => {
   it("0,041% ao dia (base 252) → 10,8823% a.a.", () => {
     expect(annualizeDailyRate("0.041")).toBe("10.8823");
   });
+  it("CDI diário oficial de 0,052531% → 14,15% a.a.", () => {
+    expect(annualizeDailyRate("0.052531")).toBe("14.1500");
+  });
   it("taxa zero mantém 0", () => {
     expect(annualizeDailyRate("0")).toBe("0.0000");
   });

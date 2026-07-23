@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import Decimal from "decimal.js";
+import { syncIndexesFromBcb } from "../src/services/sync-indexes";
 
 config({ path: ".env.local" });
 
@@ -115,6 +116,15 @@ async function main() {
       is_demo: true,
     });
     if (error) throw error;
+  }
+
+  const indexSync = await syncIndexesFromBcb(admin);
+  console.log("Índices oficiais atualizados:", indexSync.updated.join(", ") || "nenhum");
+  if (indexSync.failed.length > 0) {
+    console.warn("Falhas na sincronização de índices; mantidos os valores projetados:");
+    indexSync.failed.forEach((failure) => {
+      console.warn(`- ${failure.indexCode}: ${failure.reason}`);
+    });
   }
 
   console.log("Seed concluído. Org:", orgId);
